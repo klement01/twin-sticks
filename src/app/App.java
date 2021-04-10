@@ -19,7 +19,7 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 
 public class App extends JFrame {
-    private static final String TITULO = "Smash TV Clone";
+    private static final String TITULO = "TwinSticks";
 
     public static void main(String argv[]) {
         // Ativa o modo OpenGL para usar aceleração por hardware.

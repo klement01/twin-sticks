@@ -7,7 +7,12 @@ package elemento;
 import java.awt.geom.Point2D;
 
 public abstract class ElemEstatico extends Elemento {
+    protected final Point2D.Double posicao;
+    protected final Point2D.Double dimensoes;
+
     protected ElemEstatico(Point2D.Double posicao, Point2D.Double dimensoes) {
         super(posicao, dimensoes);
+        this.posicao = posicao;
+        this.dimensoes = dimensoes;
     }
 }

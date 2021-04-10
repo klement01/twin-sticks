@@ -8,8 +8,6 @@ import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 
 public abstract class Elemento {
-    protected static final String ASSETS = "../../assets";
-
     protected Point2D.Double posicao;
     protected Point2D.Double dimensoes;
 

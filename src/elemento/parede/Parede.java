@@ -5,7 +5,7 @@ package elemento.parede;
 
 import static java.lang.Math.abs;
 
-import elemento.Colisao;
+import elemento.Colisoes;
 import elemento.ElemEstatico;
 
 import java.awt.geom.Point2D;
@@ -13,7 +13,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.EnumSet;
 
-public abstract class Parede extends ElemEstatico implements Colisao {
+public abstract class Parede extends ElemEstatico implements Colisoes {
     /*
      * Direções em que uma parede pode empurrar um objeto
      * em colisão com ela.
@@ -68,29 +68,24 @@ public abstract class Parede extends ElemEstatico implements Colisao {
      * Implementação da interface Colisão.
      */
     @Override
-    public Rectangle2D.Double getRectColisao() {
+    public final Rectangle2D.Double getRectColisao() {
         return rectColisao;
     }
 
     @Override
-    public Point2D.Double getVetorCentro() {
+    public final Point2D.Double getVetorCentro() {
         return vetorCentro;
     }
 
     @Override
-    public Point2D.Double getVetorVelocidade() {
-        return new Point2D.Double(0, 0);
-    }
-
-    @Override
-    public void resolverColisaoCom(Colisao c) {
+    public void resolverColisaoCom(Colisoes c) {
         // Determina a interseção entre a parede e
         // o colisor c.
         var colisaoC = c.getRectColisao();
         var intersecao = this.getRectColisao().createIntersection(colisaoC);
 
         // Se a interseção for nula, retorna.
-        if (intersecao.getWidth() == 0) {
+        if (intersecao.getWidth() <= 0 || intersecao.getHeight() <= 0) {
             return;
         }
 
@@ -103,7 +98,8 @@ public abstract class Parede extends ElemEstatico implements Colisao {
         var dx = centroParede.getX() - centroC.getX();
         var dy = centroParede.getY() - centroC.getY();
 
-        // Determina a ordem em que os objetos devem ser empurrados.
+        // Determina a ordem de prioridade em que empurrar
+        // o colisor.
         var ordemEmpurrar = new ArrayDeque<Cardinalidade>(4);
 
         Runnable ordenarVertical =
@@ -119,12 +115,12 @@ public abstract class Parede extends ElemEstatico implements Colisao {
 
         Runnable ordenarHorizontal =
                 () -> {
-                    if (dy > 0) {
-                        ordemEmpurrar.addFirst(Cardinalidade.NORTE);
-                        ordemEmpurrar.addLast(Cardinalidade.SUL);
+                    if (dx > 0) {
+                        ordemEmpurrar.addFirst(Cardinalidade.OESTE);
+                        ordemEmpurrar.addLast(Cardinalidade.LESTE);
                     } else {
-                        ordemEmpurrar.addFirst(Cardinalidade.SUL);
-                        ordemEmpurrar.addLast(Cardinalidade.NORTE);
+                        ordemEmpurrar.addFirst(Cardinalidade.LESTE);
+                        ordemEmpurrar.addLast(Cardinalidade.OESTE);
                     }
                 };
 
@@ -140,34 +136,31 @@ public abstract class Parede extends ElemEstatico implements Colisao {
         // aparecer na lista de cardinalidades da parede.
         for (var i : ordemEmpurrar) {
             if (this.cardinalidades.contains(i)) {
-                var novaPosicao = new Point2D.Double();
+                var deslocamento = new Point2D.Double();
                 switch (i) {
                     case NORTE:
-                        novaPosicao.setLocation(
-                                colisaoC.getX(), colisaoC.getY() - intersecao.getHeight());
+                        deslocamento.setLocation(0, -intersecao.getHeight());
                         break;
                     case LESTE:
-                        novaPosicao.setLocation(
-                                colisaoC.getX() + intersecao.getWidth(), colisaoC.getY());
+                        deslocamento.setLocation(intersecao.getWidth(), 0);
                         break;
                     case SUL:
-                        novaPosicao.setLocation(
-                                colisaoC.getX(), colisaoC.getY() + intersecao.getHeight());
+                        deslocamento.setLocation(0, intersecao.getHeight());
                         break;
                     case OESTE:
-                        novaPosicao.setLocation(
-                                colisaoC.getX() - intersecao.getWidth(), colisaoC.getY());
+                        deslocamento.setLocation(-intersecao.getWidth(), 0);
                         break;
                 }
-                c.moverPara(novaPosicao);
+                c.empurrar(deslocamento);
+                c.registrarColisao(new Colisoes.Colisao(this, deslocamento));
                 return;
             }
         }
     }
 
     @Override
-    public void registrarColisaoCom(Colisao c) {}
+    public void registrarColisao(Colisao c) {}
 
     @Override
-    public void moverPara(Point2D.Double p) {}
+    public void empurrar(Point2D.Double p) {}
 }

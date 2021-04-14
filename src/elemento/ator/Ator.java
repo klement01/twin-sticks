@@ -40,10 +40,10 @@ public abstract class Ator extends ElemDinamico implements Colisoes {
     @Override
     public Rectangle2D.Double getRectColisao() {
         return new Rectangle2D.Double(
-                this.posicao.getX(),
-                this.posicao.getY(),
-                this.dimensoes.getX(),
-                this.dimensoes.getY());
+                this.getPosicao().getX(),
+                this.getPosicao().getY(),
+                this.getDimensoes().getX(),
+                this.getDimensoes().getY());
     }
 
     // Obter o vetor para o centro do objeto.
@@ -118,7 +118,8 @@ public abstract class Ator extends ElemDinamico implements Colisoes {
     // Altera a posição do objeto no frame atual.
     @Override
     public void empurrar(Point2D.Double p) {
-        this.posicao =
-                new Point2D.Double(this.posicao.getX() + p.getX(), this.posicao.getY() + p.getY());
+        this.setPosicao(
+                new Point2D.Double(
+                        this.getPosicao().getX() + p.getX(), this.getPosicao().getY() + p.getY()));
     }
 }

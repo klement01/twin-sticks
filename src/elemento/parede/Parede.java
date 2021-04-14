@@ -8,6 +8,9 @@ import static java.lang.Math.abs;
 import elemento.Colisoes;
 import elemento.ElemEstatico;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
@@ -62,6 +65,60 @@ public abstract class Parede extends ElemEstatico implements Colisoes {
             throw new IllegalArgumentException("Parede deve empurrar em pelo menos uma direção.");
         }
         this.cardinalidades = cardinalidades;
+    }
+
+    protected EnumSet<Cardinalidade> getCardinalidades() {
+        return this.cardinalidades;
+    }
+
+    /*
+     * Método padrão de desenho, usado para testes.
+     */
+    @Override
+    public void desenhar(Point2D.Double camera, Graphics2D g) {
+        // Usa um retângulo com preenchimento azul e borda
+        // laranja para mostra os limites de colisão da parede.
+        g.setColor(Color.BLUE);
+        var rect =
+                new Rectangle2D.Double(
+                        this.getPosicao().getX() - camera.getX(),
+                        this.getPosicao().getY() - camera.getY(),
+                        this.getDimensoes().getX(),
+                        this.getDimensoes().getY());
+        g.fill(rect);
+        g.setColor(Color.ORANGE);
+        g.draw(rect);
+
+        // Usa elipses laranjas nos cantos do retângulo para
+        // mostras as cardinalidades de colisão.
+        var w = rect.getWidth() / 10;
+        var h = rect.getHeight() / 10;
+        if (this.getCardinalidades().contains(Cardinalidade.NORTE)) {
+            g.fill(
+                    new Ellipse2D.Double(
+                            rect.getX() + rect.getWidth() / 2 - w / 2, rect.getY(), w, h));
+        }
+        if (this.getCardinalidades().contains(Cardinalidade.OESTE)) {
+            g.fill(
+                    new Ellipse2D.Double(
+                            rect.getX(), rect.getY() + rect.getHeight() / 2 - h / 2, w, h));
+        }
+        if (this.getCardinalidades().contains(Cardinalidade.LESTE)) {
+            g.fill(
+                    new Ellipse2D.Double(
+                            rect.getX() + rect.getWidth() - w,
+                            rect.getY() + rect.getHeight() / 2 - h / 2,
+                            w,
+                            h));
+        }
+        if (this.getCardinalidades().contains(Cardinalidade.SUL)) {
+            g.fill(
+                    new Ellipse2D.Double(
+                            rect.getX() + rect.getWidth() / 2 - w / 2,
+                            rect.getY() + rect.getHeight() - h,
+                            w,
+                            h));
+        }
     }
 
     /*
@@ -151,6 +208,8 @@ public abstract class Parede extends ElemEstatico implements Colisoes {
                         deslocamento.setLocation(-intersecao.getWidth(), 0);
                         break;
                 }
+                // Empurra o objeto colisor e registra a
+                // colisão.
                 c.empurrar(deslocamento);
                 c.registrarColisao(new Colisoes.Colisao(this, deslocamento));
                 return;
@@ -162,5 +221,5 @@ public abstract class Parede extends ElemEstatico implements Colisoes {
     public void registrarColisao(Colisao c) {}
 
     @Override
-    public void empurrar(Point2D.Double p) {}
+    public final void empurrar(Point2D.Double p) {}
 }

@@ -27,10 +27,11 @@ public interface Colisoes {
             return this.deslocamento;
         }
     }
+
     // Obtem o retângulo que representa a colisão do objeto.
     public Rectangle2D.Double getRectColisao();
 
-    // Obter o vetor para o centro do objeto.
+    // Obtem o vetor para o centro do objeto.
     public Point2D.Double getVetorCentro();
 
     // Realiza qualquer ação necessária durante a resolução

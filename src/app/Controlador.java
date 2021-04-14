@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import elemento.Elemento;
 import elemento.ator.Ator;
 import elemento.ator.Jogador;
+import elemento.parede.Parede;
 import elemento.parede.ParedeTeste;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;

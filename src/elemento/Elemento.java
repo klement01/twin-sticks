@@ -8,11 +8,29 @@ import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 
 public abstract class Elemento {
-    protected Point2D.Double posicao;
-    protected Point2D.Double dimensoes;
+    private Point2D.Double posicao;
+    private Point2D.Double dimensoes;
 
     protected Elemento(Point2D.Double posicao, Point2D.Double dimensoes) {
         this.posicao = posicao;
+        this.dimensoes = dimensoes;
+    }
+
+    // Getter e setter de posicao.
+    protected Point2D.Double getPosicao() {
+        return this.posicao;
+    }
+
+    protected void setPosicao(Point2D.Double posicao) {
+        this.posicao = posicao;
+    }
+
+    // Getter e setter de dimensoes.
+    protected Point2D.Double getDimensoes() {
+        return this.dimensoes;
+    }
+
+    protected void setDimensoes(Point2D.Double dimensoes) {
         this.dimensoes = dimensoes;
     }
 

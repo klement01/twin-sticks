@@ -111,24 +111,16 @@ public class Jogador extends Ator implements KeyListener {
         for (var i : filaDeEntradas) {
             switch (i) {
                 case MOVER_N:
-                    if (vy == 0) {
-                        vy = -V_MAX;
-                    }
+                    vy = -V_MAX;
                     break;
                 case MOVER_S:
-                    if (vy == 0) {
-                        vy = V_MAX;
-                    }
+                    vy = V_MAX;
                     break;
                 case MOVER_W:
-                    if (vx == 0) {
-                        vx = -V_MAX;
-                    }
+                    vx = -V_MAX;
                     break;
                 case MOVER_E:
-                    if (vx == 0) {
-                        vx = V_MAX;
-                    }
+                    vx = V_MAX;
                     break;
             }
         }
@@ -137,9 +129,9 @@ public class Jogador extends Ator implements KeyListener {
         // TODO: calcular a velocidade baseada na aceleração.
 
         // Adiciona a velocidade à posição.
-        this.posicao = new Point2D.Double(
-                this.posicao.getX() + this.velocidade.getX() * dt,
-                this.posicao.getY() + this.velocidade.getY() * dt);
+        this.setPosicao(new Point2D.Double(
+                this.getPosicao().getX() + this.velocidade.getX() * dt,
+                this.getPosicao().getY() + this.velocidade.getY() * dt));
 
         return true;
     }
@@ -164,10 +156,10 @@ public class Jogador extends Ator implements KeyListener {
         g.setColor(Color.RED);
         var rect =
                 new Rectangle2D.Double(
-                        this.posicao.getX() - camera.getX(),
-                        this.posicao.getY() - camera.getY(),
-                        this.dimensoes.getX(),
-                        this.dimensoes.getY());
+                        this.getPosicao().getX() - camera.getX(),
+                        this.getPosicao().getY() - camera.getY(),
+                        this.getDimensoes().getX(),
+                        this.getDimensoes().getY());
         g.fill(rect);
     }
 }

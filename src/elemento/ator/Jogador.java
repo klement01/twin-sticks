@@ -3,16 +3,15 @@
  */
 package elemento.ator;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.geom.Point2D;
-import javax.swing.JPanel;
+import java.awt.geom.Rectangle2D;
 import java.util.LinkedHashSet;
 
-// TODO: gráficos para o jogador.
-import java.awt.Color;
-import java.awt.geom.Rectangle2D;
+import javax.swing.JPanel;
 
 public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.

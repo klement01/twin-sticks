@@ -3,12 +3,12 @@
  */
 package elemento.ator;
 
-import elemento.Colisoes;
-import elemento.ElemDinamico;
-
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+
+import elemento.Colisoes;
+import elemento.ElemDinamico;
 
 public abstract class Ator extends ElemDinamico implements Colisoes {
     protected ArrayList<Colisao> filaDeColisoes = new ArrayList<Colisao>();

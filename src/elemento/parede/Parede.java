@@ -5,9 +5,6 @@ package elemento.parede;
 
 import static java.lang.Math.abs;
 
-import elemento.Colisoes;
-import elemento.ElemEstatico;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
@@ -16,14 +13,14 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.EnumSet;
 
+import app.Comum.Cardinalidade;
+import elemento.Colisoes;
+import elemento.ElemEstatico;
+
 public abstract class Parede extends ElemEstatico implements Colisoes {
     /*
      * Direções em que uma parede pode empurrar um objeto em colisão com ela.
      */
-    public enum Cardinalidade {
-        NORTE, LESTE, SUL, OESTE
-    };
-
     private final EnumSet<Cardinalidade> cardinalidades;
 
     /*
@@ -31,6 +28,11 @@ public abstract class Parede extends ElemEstatico implements Colisoes {
      */
     private final Rectangle2D.Double rectColisao;
     private final Point2D.Double vetorCentro;
+
+    /*
+     * Cor, usada para testes.
+     */
+    protected Color cor;
 
     /*
      * Cria um parede com colisão em todas suas superfícies ou em um subconjunto de
@@ -66,7 +68,7 @@ public abstract class Parede extends ElemEstatico implements Colisoes {
     public void desenhar(Point2D.Double camera, Graphics2D g) {
         // Usa um retângulo com preenchimento azul e borda
         // laranja para mostra os limites de colisão da parede.
-        g.setColor(Color.BLUE);
+        g.setColor(cor);
         var rect = new Rectangle2D.Double(this.getPosicao().getX() - camera.getX(),
                 this.getPosicao().getY() - camera.getY(), this.getDimensoes().getX(), this.getDimensoes().getY());
         g.fill(rect);

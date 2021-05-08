@@ -3,6 +3,9 @@
  */
 package main.java.elemento.ator;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.hypot;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
@@ -13,11 +16,17 @@ import java.util.LinkedHashSet;
 
 import javax.swing.JPanel;
 
+import main.java.elemento.parede.Parede;
+import main.java.sala.Sala;
+
 public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.
-    private static final int MAX_VIDA = 3;
-
+    private static final int VIDA_MAX = 6;
     private static final Point2D.Double DIMENSOES = main.java.app.Comum.DIMENSOES_QUADRADOS;
+    private static final double VELOCIDADE_MIN = 10;
+    private static final double VELOCIDADE_MAX = 175;
+    private static final double ACELERACAO_MAX = 1250;
+    private static final double ESCALA_ATRITO = 10;
 
     public enum Tecla {
         MOVER_N(KeyEvent.VK_W), MOVER_E(KeyEvent.VK_D), MOVER_S(KeyEvent.VK_S), MOVER_W(KeyEvent.VK_A);
@@ -35,9 +44,8 @@ public class Jogador extends Ator implements KeyListener {
 
     // Variáveis do jogador.
     private int vida;
-
     private Point2D.Double velocidade;
-
+    private Sala sala;
     private LinkedHashSet<Tecla> filaDeEntradas = new LinkedHashSet<Tecla>();
 
     public Jogador(Point2D.Double posicao, JPanel raiz) {
@@ -53,12 +61,13 @@ public class Jogador extends Ator implements KeyListener {
 
     // Configura o estado inicial do jogador.
     private void condicoesIniciais() {
-        this.vida = Jogador.MAX_VIDA;
+        this.vida = Jogador.VIDA_MAX;
         this.velocidade = new Point2D.Double(0, 0);
+        this.sala = null;
     }
 
     /*
-     * Implementa a interface KeyListener para responde às entradas do jogador.
+     * Implementa a interface KeyListener para responder às entradas do jogador.
      */
     @Override
     public void keyPressed(KeyEvent e) {
@@ -97,34 +106,62 @@ public class Jogador extends Ator implements KeyListener {
             return false;
         }
 
-        // TODO: fazer entradas causar aceleração, não
-        // velocidade imediata.
-        final int V_MAX = 100;
-        int vx = 0;
-        int vy = 0;
+        // Determina a aceleração causada pelo jogador.
+        double axAtrito = 0;
+        double ayAtrito = 0;
+        double axJogador = 0;
+        double ayJogador = 0;
         for (var i : filaDeEntradas) {
             switch (i) {
                 case MOVER_N:
-                    vy = -V_MAX;
+                    ayJogador = -ACELERACAO_MAX;
                     break;
                 case MOVER_S:
-                    vy = V_MAX;
+                    ayJogador = ACELERACAO_MAX;
                     break;
                 case MOVER_W:
-                    vx = -V_MAX;
+                    axJogador = -ACELERACAO_MAX;
                     break;
                 case MOVER_E:
-                    vx = V_MAX;
+                    axJogador = ACELERACAO_MAX;
                     break;
             }
         }
-        this.velocidade.setLocation(vx, vy);
-
-        // TODO: calcular a velocidade baseada na aceleração.
-
+        // Calcula a aceleração causada por atrito.
+        if (axJogador == 0) {
+            axAtrito = -this.velocidade.getX() * ESCALA_ATRITO;
+        }
+        if (ayJogador == 0) {
+            ayAtrito = -this.velocidade.getY() * ESCALA_ATRITO;
+        }
+        // Calcula a aceleração total.
+        double ax = axAtrito + axJogador;
+        double ay = ayAtrito + ayJogador;
+        // Adiciona a aceleração à velocidade enquanto limita
+        // ambas a seus valores máximos.
+        double escalaAceleracao = abs(ACELERACAO_MAX / hypot(ax, ay));
+        if (escalaAceleracao < 1) {
+            ax *= escalaAceleracao;
+            ay *= escalaAceleracao;
+        }
+        double vx = this.velocidade.getX() + ax * dt;
+        double vy = this.velocidade.getY() + ay * dt;
+        double escalaVelocidade = abs(VELOCIDADE_MAX / hypot(vx, vy));
+        if (escalaVelocidade < 1) {
+            vx *= escalaVelocidade;
+            vy *= escalaVelocidade;
+        }
+        // Normaliza valores pequenos de velocidade.
+        if (abs(vx) < VELOCIDADE_MIN && axJogador == 0) {
+            vx = 0;
+        }
+        if (abs(vy) < VELOCIDADE_MIN && ayJogador == 0) {
+            vy = 0;
+        }
         // Adiciona a velocidade à posição.
-        this.setPosicao(new Point2D.Double(this.getPosicao().getX() + this.velocidade.getX() * dt,
-                this.getPosicao().getY() + this.velocidade.getY() * dt));
+        this.setPosicao(new Point2D.Double(this.getPosicao().getX() + vx * dt, this.getPosicao().getY() + vy * dt));
+        // Registra a velocidade.
+        this.velocidade.setLocation(vx, vy);
 
         return true;
     }
@@ -133,6 +170,16 @@ public class Jogador extends Ator implements KeyListener {
     // TODO: determinar efeitos de colisões.
     @Override
     protected void resolverColisaoPassada(Colisao c, double dt) {
+        // Se o jogador se chocar com uma parede, reseta sua velocidade no
+        // componente adequado.
+        if (c.getColisor() instanceof Parede) {
+            if (c.getDeslocamento().getX() != 0) {
+                this.velocidade.setLocation(0, this.velocidade.getY());
+            }
+            if (c.getDeslocamento().getY() != 0) {
+                this.velocidade.setLocation(this.velocidade.getX(), 0);
+            }
+        }
     }
 
     // Checha se o objeto ainda está vivo, ou seja, se deve
@@ -140,6 +187,12 @@ public class Jogador extends Ator implements KeyListener {
     @Override
     protected boolean atorVivo() {
         return this.vida > 0;
+    }
+
+    // Registra uma sala com o jogar para que ele possa criar novos objetos
+    // como projéteis.
+    public void registraSala(Sala sala) {
+        this.sala = sala;
     }
 
     // Desenha o objeto na tela, levando em consideração a posição

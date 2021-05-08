@@ -2,9 +2,9 @@
  * Representa uma sala contendo paredes,
  * entradas e inimigos.
  */
-package sala;
+package main.java.sala;
 
-import static app.Comum.DIMENSOES_QUADRADOS;
+import static main.java.app.Comum.DIMENSOES_QUADRADOS;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
@@ -16,14 +16,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 
-import app.Comum.Cardinalidade;
-import elemento.Colisoes;
-import elemento.Elemento;
-import elemento.ator.Ator;
-import elemento.ator.Jogador;
-import elemento.parede.Parede;
-import elemento.parede.ParedePadrao;
-import elemento.parede.Porta;
+import main.java.app.Comum.Cardinalidade;
+import main.java.elemento.Colisoes;
+import main.java.elemento.Elemento;
+import main.java.elemento.ator.Ator;
+import main.java.elemento.ator.Jogador;
+import main.java.elemento.parede.Parede;
+import main.java.elemento.parede.ParedePadrao;
+import main.java.elemento.parede.Porta;
 
 public class Sala {
     /*

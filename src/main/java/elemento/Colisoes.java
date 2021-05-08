@@ -2,7 +2,7 @@
  * Define um método para resolver colisões entre
  * objetos que a implementam.
  */
-package elemento;
+package main.java.elemento;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;

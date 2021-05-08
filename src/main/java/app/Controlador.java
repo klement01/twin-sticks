@@ -2,10 +2,10 @@
  * Implementa o loop principal de atualização e renderização
  * dos elementos do jogo.
  */
-package app;
+package main.java.app;
 
-import static app.Comum.DIMENSOES_CAMPO;
-import static app.Comum.FPS_ALVO;
+import static main.java.app.Comum.DIMENSOES_CAMPO;
+import static main.java.app.Comum.FPS_ALVO;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -20,8 +20,8 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import elemento.ator.Jogador;
-import sala.Sala;
+import main.java.elemento.ator.Jogador;
+import main.java.sala.Sala;
 
 @SuppressWarnings("serial")
 class Controlador extends JPanel {

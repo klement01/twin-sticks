@@ -1,7 +1,7 @@
 /**
  * Representa o ator controlado pelo jogador.
  */
-package elemento.ator;
+package main.java.elemento.ator;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -17,7 +17,7 @@ public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.
     private static final int MAX_VIDA = 3;
 
-    private static final Point2D.Double DIMENSOES = app.Comum.DIMENSOES_QUADRADOS;
+    private static final Point2D.Double DIMENSOES = main.java.app.Comum.DIMENSOES_QUADRADOS;
 
     public enum Tecla {
         MOVER_N(KeyEvent.VK_W), MOVER_E(KeyEvent.VK_D), MOVER_S(KeyEvent.VK_S), MOVER_W(KeyEvent.VK_A);

@@ -1,9 +1,9 @@
 /**
  * Parede que pode ser instanciada, usada para testes.
  */
-package elemento.parede;
+package main.java.elemento.parede;
 
-import static app.Comum.DIMENSOES_QUADRADOS;
+import static main.java.app.Comum.DIMENSOES_QUADRADOS;
 
 import java.awt.Color;
 import java.awt.geom.Point2D;

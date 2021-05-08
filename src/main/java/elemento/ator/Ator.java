@@ -1,14 +1,14 @@
 /**
  * Representa um elemento dinâmico que tem colisão.
  */
-package elemento.ator;
+package main.java.elemento.ator;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
-import elemento.Colisoes;
-import elemento.ElemDinamico;
+import main.java.elemento.Colisoes;
+import main.java.elemento.ElemDinamico;
 
 public abstract class Ator extends ElemDinamico implements Colisoes {
     protected ArrayList<Colisao> filaDeColisoes = new ArrayList<Colisao>();

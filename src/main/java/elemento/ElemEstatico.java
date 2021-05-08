@@ -2,7 +2,7 @@
  * Representa um elemento gráfico com posição
  * e dimensões constantes.
  */
-package main.java.elemento;
+package elemento;
 
 import java.awt.geom.Point2D;
 

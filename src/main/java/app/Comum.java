@@ -1,7 +1,7 @@
 /**
  * Constantes de uso comum pelo programa.
  */
-package main.java.app;
+package app;
 
 import java.awt.Dimension;
 import java.awt.geom.Point2D;

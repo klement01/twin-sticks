@@ -3,7 +3,7 @@
  * de se mover e realizar outras ações dentro da área de
  * jogo.
  */
-package main.java.elemento;
+package elemento;
 
 import java.awt.geom.Point2D;
 

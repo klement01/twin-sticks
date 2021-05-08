@@ -13,7 +13,7 @@
  * Cria a janela principal do jogo e inicia
  * seu controlador.
  */
-package main.java.app;
+package app;
 
 import java.awt.EventQueue;
 
@@ -21,7 +21,7 @@ import javax.swing.JFrame;
 
 @SuppressWarnings("serial")
 public class App extends JFrame {
-    private static final String TITULO = main.java.app.Comum.TITULO;
+    private static final String TITULO = app.Comum.TITULO;
 
     public static void main(String argv[]) {
         // Ativa o modo OpenGL para usar aceleração por hardware.

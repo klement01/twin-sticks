@@ -1,7 +1,7 @@
 /**
  * Representa uma parede estática.
  */
-package main.java.elemento.parede;
+package elemento.parede;
 
 import static java.lang.Math.abs;
 
@@ -13,9 +13,9 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.EnumSet;
 
-import main.java.app.Comum.Cardinalidade;
-import main.java.elemento.Colisoes;
-import main.java.elemento.ElemEstatico;
+import app.Comum.Cardinalidade;
+import elemento.Colisoes;
+import elemento.ElemEstatico;
 
 public abstract class Parede extends ElemEstatico implements Colisoes {
     /*

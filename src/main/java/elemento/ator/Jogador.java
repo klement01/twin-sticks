@@ -1,7 +1,7 @@
 /**
  * Representa o ator controlado pelo jogador.
  */
-package main.java.elemento.ator;
+package elemento.ator;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.hypot;
@@ -16,13 +16,13 @@ import java.util.LinkedHashSet;
 
 import javax.swing.JPanel;
 
-import main.java.elemento.parede.Parede;
-import main.java.sala.Sala;
+import elemento.parede.Parede;
+import sala.Sala;
 
 public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.
     private static final int VIDA_MAX = 6;
-    private static final Point2D.Double DIMENSOES = main.java.app.Comum.DIMENSOES_QUADRADOS;
+    private static final Point2D.Double DIMENSOES = app.Comum.DIMENSOES_QUADRADOS;
     private static final double VELOCIDADE_MIN = 10;
     private static final double VELOCIDADE_MAX = 175;
     private static final double ACELERACAO_MAX = 1250;

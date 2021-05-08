@@ -2,7 +2,7 @@
  * Representa um elemento gráfico do jogo,
  * que é retangular e tem aparência.
  */
-package main.java.elemento;
+package elemento;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;

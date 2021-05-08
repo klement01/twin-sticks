@@ -8,7 +8,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
 import javax.swing.JPanel;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
 // TODO: gráficos para o jogador.
@@ -19,18 +18,17 @@ public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.
     private static final int MAX_VIDA = 3;
 
-    private static final Point2D.Double DIMENSOES = new Point2D.Double(48, 48);
+    private static final Point2D.Double DIMENSOES = app.Comum.DIMENSOES_QUADRADOS;
 
     public enum Tecla {
-        MOVER_N (KeyEvent.VK_W),
-        MOVER_E (KeyEvent.VK_D),
-        MOVER_S (KeyEvent.VK_S),
-        MOVER_W (KeyEvent.VK_A);
+        MOVER_N(KeyEvent.VK_W), MOVER_E(KeyEvent.VK_D), MOVER_S(KeyEvent.VK_S), MOVER_W(KeyEvent.VK_A);
 
         private int valor;
+
         Tecla(int valor) {
             this.valor = valor;
         }
+
         public int getValor() {
             return valor;
         }
@@ -40,8 +38,6 @@ public class Jogador extends Ator implements KeyListener {
     private int vida;
 
     private Point2D.Double velocidade;
-
-    private Point2D.Double aceleracao;
 
     private LinkedHashSet<Tecla> filaDeEntradas = new LinkedHashSet<Tecla>();
 
@@ -59,13 +55,11 @@ public class Jogador extends Ator implements KeyListener {
     // Configura o estado inicial do jogador.
     private void condicoesIniciais() {
         this.vida = Jogador.MAX_VIDA;
-        this.velocidade = new Point2D.Double();
-        this.aceleracao = new Point2D.Double();
+        this.velocidade = new Point2D.Double(0, 0);
     }
 
     /*
-     * Implementa a interface KeyListener para responde às
-     * entradas do jogador.
+     * Implementa a interface KeyListener para responde às entradas do jogador.
      */
     @Override
     public void keyPressed(KeyEvent e) {
@@ -90,7 +84,8 @@ public class Jogador extends Ator implements KeyListener {
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) {
+    }
 
     // Por padrão, processa todas as colisões não concluídas e
     // apaga a lista de colisões para processar. Em seguida,
@@ -129,8 +124,7 @@ public class Jogador extends Ator implements KeyListener {
         // TODO: calcular a velocidade baseada na aceleração.
 
         // Adiciona a velocidade à posição.
-        this.setPosicao(new Point2D.Double(
-                this.getPosicao().getX() + this.velocidade.getX() * dt,
+        this.setPosicao(new Point2D.Double(this.getPosicao().getX() + this.velocidade.getX() * dt,
                 this.getPosicao().getY() + this.velocidade.getY() * dt));
 
         return true;
@@ -139,7 +133,8 @@ public class Jogador extends Ator implements KeyListener {
     // Termina de resolver uma colisão do frame anterior.
     // TODO: determinar efeitos de colisões.
     @Override
-    protected void resolverColisaoPassada(Colisao c, double dt) {}
+    protected void resolverColisaoPassada(Colisao c, double dt) {
+    }
 
     // Checha se o objeto ainda está vivo, ou seja, se deve
     // continuar existindo ou se deve ser destruído.
@@ -154,12 +149,8 @@ public class Jogador extends Ator implements KeyListener {
     @Override
     public void desenhar(Point2D.Double camera, Graphics2D g) {
         g.setColor(Color.RED);
-        var rect =
-                new Rectangle2D.Double(
-                        this.getPosicao().getX() - camera.getX(),
-                        this.getPosicao().getY() - camera.getY(),
-                        this.getDimensoes().getX(),
-                        this.getDimensoes().getY());
+        var rect = new Rectangle2D.Double(this.getPosicao().getX() - camera.getX(),
+                this.getPosicao().getY() - camera.getY(), this.getDimensoes().getX(), this.getDimensoes().getY());
         g.fill(rect);
     }
 }

@@ -14,8 +14,10 @@ public abstract class ElemEstatico extends Elemento {
     // Proíbe a edição da posição e das dimensões
     // do objeto.
     @Override
-    protected void setPosicao(Point2D.Double posicao) {}
+    protected void setPosicao(Point2D.Double posicao) {
+    }
 
     @Override
-    protected void setDimensoes(Point2D.Double dimensoes) {}
+    protected void setDimensoes(Point2D.Double dimensoes) {
+    }
 }

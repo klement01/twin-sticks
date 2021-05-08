@@ -4,8 +4,9 @@
  * Trabalho Final
  *
  * Grupo:
- * Lucas Reinehr
- * Gabriel Cunha
+ * Gabriel Sadigursky Nunes Cunha
+ * Lucas Klement Reinehr
+ * Yasmin Rodrigues Koppenhagen
  *
  * =========================================
  *
@@ -18,8 +19,9 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 
+@SuppressWarnings("serial")
 public class App extends JFrame {
-    private static final String TITULO = "TwinSticks";
+    private static final String TITULO = app.Comum.TITULO;
 
     public static void main(String argv[]) {
         // Ativa o modo OpenGL para usar aceleração por hardware.
@@ -27,10 +29,10 @@ public class App extends JFrame {
         System.setProperty("sun.java2d.opengl", "true");
 
         // Cria uma janela e a torna visível.
-        EventQueue.invokeLater(
-                () -> {
-                    var jogo = new App();
-                });
+        EventQueue.invokeLater(() -> {
+            var jogo = new App();
+            jogo.setVisible(true);
+        });
     }
 
     private App() {
@@ -53,8 +55,5 @@ public class App extends JFrame {
 
         // Centra a janela.
         setLocationRelativeTo(null);
-
-        // Torna a janela visível.
-        setVisible(true);
     }
 }

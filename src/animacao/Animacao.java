@@ -5,4 +5,5 @@
  */
 package animacao;
 
-public abstract class Animacao {}
+public abstract class Animacao {
+}

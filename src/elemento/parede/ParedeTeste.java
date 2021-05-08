@@ -7,13 +7,13 @@ import java.awt.geom.Point2D;
 import java.util.EnumSet;
 
 public class ParedeTeste extends Parede {
-    public ParedeTeste(Point2D.Double posicao, Point2D.Double dimensoes) {
-        super(posicao, dimensoes);
+    private static final Point2D.Double DIMENSOES = app.Comum.DIMENSOES_QUADRADOS;
+
+    public ParedeTeste(Point2D.Double posicao) {
+        super(posicao, DIMENSOES);
     }
 
-    public ParedeTeste(
-            Point2D.Double posicao, Point2D.Double dimensoes, EnumSet<Cardinalidade> cardinalidades)
-            throws IllegalArgumentException {
-        super(posicao, dimensoes, cardinalidades);
+    public ParedeTeste(Point2D.Double posicao, EnumSet<Cardinalidade> cardinalidades) {
+        super(posicao, DIMENSOES, cardinalidades);
     }
 }

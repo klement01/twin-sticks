@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
 
 import app.Comum.Cardinalidade;
 import elemento.Colisoes;
@@ -53,32 +54,11 @@ public class Sala {
         processarMatrizDeSala(matriz);
     }
 
-    private enum TiposElemento {
-        VAZIO, PAREDE_PADRAO, PORTA;
-
-        private static final EnumSet<TiposElemento> TiposParede = EnumSet.of(PAREDE_PADRAO);
-
-        public static TiposElemento getEnum(String chave) {
-            switch (chave) {
-                case "#":
-                    return PAREDE_PADRAO;
-                case "P":
-                    return PORTA;
-                default:
-                    return VAZIO;
-            }
-        }
-
-        public boolean isParede() {
-            return TiposParede.contains(this);
-        }
-    }
-
     /**
      * Converte o arquivo em uma matriz 2D contendo todos os caracteres do arquivo.
      */
-    private ArrayList<ArrayList<TiposElemento>> obterMatrizDeArquivo(String caminho) throws IOException {
-        var matriz = new ArrayList<ArrayList<TiposElemento>>();
+    private ArrayList<ArrayList<TipoElemento>> obterMatrizDeArquivo(String caminho) throws IOException {
+        var matriz = new ArrayList<ArrayList<TipoElemento>>();
 
         InputStream streamArquivo = getClass().getResourceAsStream(caminho);
         BufferedReader arquivo = new BufferedReader(new InputStreamReader(streamArquivo));
@@ -87,9 +67,9 @@ public class Sala {
         String linha;
         while ((linha = arquivo.readLine()) != null) {
             var valoresLinha = Arrays.asList(linha.trim().split(""));
-            var linhaProcessada = new ArrayList<TiposElemento>();
+            var linhaProcessada = new ArrayList<TipoElemento>();
             for (var i : valoresLinha) {
-                linhaProcessada.add(TiposElemento.getEnum(i));
+                linhaProcessada.add(TipoElemento.getTipoElemento(i));
             }
             matriz.add(linhaProcessada);
         }
@@ -103,31 +83,39 @@ public class Sala {
      * Processa uma matriz representando uma sala, convertendo seus caracteres em
      * objetos do jogo.
      */
-    private void processarMatrizDeSala(ArrayList<ArrayList<TiposElemento>> matriz) {
+    private void processarMatrizDeSala(ArrayList<ArrayList<TipoElemento>> matriz) {
         // Itera sobre todos os elementos.
         for (int i = 0; i < matriz.size(); i++) {
             var linha = matriz.get(i);
             for (int j = 0; j < linha.size(); j++) {
-                TiposElemento t = linha.get(j);
+                TipoElemento t = linha.get(j);
+
+                // Se o tipo de elemento é VAZIO, não faz mais nada.
+                if (t == TipoElemento.VAZIO) {
+                    continue;
+                }
 
                 // Determina a posição no grid.
                 var posicao = new Point2D.Double(j * DIMENSOES_QUADRADOS.x, i * DIMENSOES_QUADRADOS.y);
 
-                if (t == TiposElemento.PORTA) {
-                    // Elemento é uma porta.
-                    Porta porta;
-                    if (i == 0 || i == matriz.size() - 1) {
-                        porta = Porta.portaHorizontal(posicao);
-                    } else {
-                        porta = Porta.portaVertical(posicao);
-                    }
-                    registrar(porta);
-
-                } else if (t == TiposElemento.PAREDE_PADRAO) {
-                    // Elemento é uma parede padrão.
-                    var cardinalidades = determinarCardinalidades(matriz, i, j);
-                    var parede = new ParedePadrao(posicao, cardinalidades);
-                    registrar(parede);
+                // Instancia o elemento adequado e o registra na sala.
+                switch (t) {
+                    case PORTA:
+                        Porta porta;
+                        if (i == 0 || i == matriz.size() - 1) {
+                            porta = Porta.portaHorizontal(posicao);
+                        } else {
+                            porta = Porta.portaVertical(posicao);
+                        }
+                        registrar(porta);
+                        break;
+                    case PAREDE_PADRAO:
+                        var cardinalidades = determinarCardinalidades(matriz, i, j);
+                        var parede = new ParedePadrao(posicao, cardinalidades);
+                        registrar(parede);
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -137,7 +125,7 @@ public class Sala {
      * Determina as direções em que uma parede da matriz na posição especificada
      * deve empurrar.
      */
-    private EnumSet<Cardinalidade> determinarCardinalidades(ArrayList<ArrayList<TiposElemento>> matriz, int i, int j) {
+    private EnumSet<Cardinalidade> determinarCardinalidades(ArrayList<ArrayList<TipoElemento>> matriz, int i, int j) {
         // Determina em que direções a parede deve empurrar, checando se existe
         // paredes, acima, abaixo e aos lados.
         var cardinalidades = new ArrayList<Cardinalidade>();
@@ -221,5 +209,44 @@ public class Sala {
         for (var i : elementos) {
             i.desenhar(camera, g);
         }
+    }
+}
+
+/**
+ * Mapeia caracteres para tipos de elementos do jogo.
+ */
+enum TipoElemento {
+    VAZIO("-"), PAREDE_PADRAO("#"), PORTA("P");
+
+    // Inicializa o mapa após todas as chaves terem sido inicializadas.
+    // Baseado em <https://stackoverflow.com/a/536461>.
+    private static HashMap<String, TipoElemento> mapa;
+    static {
+        TipoElemento.mapa = new HashMap<String, TipoElemento>();
+        for (var i : EnumSet.allOf(TipoElemento.class)) {
+            TipoElemento.mapa.put(i.valor, i);
+        }
+    }
+
+    // Tipos de elementos que contam como uma parede.
+    private static final EnumSet<TipoElemento> TiposParede = EnumSet.of(PAREDE_PADRAO);
+
+    private String valor;
+
+    TipoElemento(String valor) {
+        this.valor = valor;
+    }
+
+    public static TipoElemento getTipoElemento(String chave) {
+        // Qualquer chave não identificada conta como vazia.
+        var tipo = TipoElemento.mapa.get(chave);
+        if (tipo == null) {
+            tipo = VAZIO;
+        }
+        return tipo;
+    }
+
+    public boolean isParede() {
+        return TiposParede.contains(this);
     }
 }

@@ -3,6 +3,7 @@
  */
 package elemento.ator;
 
+import static app.Comum.DIMENSOES_QUADRADOS;
 import static java.lang.Math.abs;
 import static java.lang.Math.hypot;
 
@@ -12,6 +13,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 
 import javax.swing.JPanel;
@@ -22,25 +25,12 @@ import sala.Sala;
 public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.
     private static final int VIDA_MAX = 6;
-    private static final Point2D.Double DIMENSOES = app.Comum.DIMENSOES_QUADRADOS;
+    private static final Point2D.Double DIMENSOES = new Point2D.Double(DIMENSOES_QUADRADOS.x * 9 / 10,
+            DIMENSOES_QUADRADOS.y * 9 / 10);
     private static final double VELOCIDADE_MIN = 10;
     private static final double VELOCIDADE_MAX = 175;
     private static final double ACELERACAO_MAX = 1250;
     private static final double ESCALA_ATRITO = 10;
-
-    public enum Tecla {
-        MOVER_N(KeyEvent.VK_W), MOVER_E(KeyEvent.VK_D), MOVER_S(KeyEvent.VK_S), MOVER_W(KeyEvent.VK_A);
-
-        private int valor;
-
-        Tecla(int valor) {
-            this.valor = valor;
-        }
-
-        public int getValor() {
-            return valor;
-        }
-    }
 
     // Variáveis do jogador.
     private int vida;
@@ -71,23 +61,19 @@ public class Jogador extends Ator implements KeyListener {
      */
     @Override
     public void keyPressed(KeyEvent e) {
-        int tecla = e.getKeyCode();
-        for (var i : Tecla.values()) {
-            if (tecla == i.getValor()) {
-                this.filaDeEntradas.add(i);
-                return;
-            }
+        int valor = e.getKeyCode();
+        Tecla tecla = Tecla.getTecla(valor);
+        if (tecla != null) {
+            this.filaDeEntradas.add(tecla);
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        int tecla = e.getKeyCode();
-        for (var i : Tecla.values()) {
-            if (tecla == i.getValor()) {
-                this.filaDeEntradas.remove(i);
-                return;
-            }
+        int valor = e.getKeyCode();
+        Tecla tecla = Tecla.getTecla(valor);
+        if (tecla != null) {
+            this.filaDeEntradas.remove(tecla);
         }
     }
 
@@ -204,5 +190,32 @@ public class Jogador extends Ator implements KeyListener {
         var rect = new Rectangle2D.Double(this.getPosicao().getX() - camera.getX(),
                 this.getPosicao().getY() - camera.getY(), this.getDimensoes().getX(), this.getDimensoes().getY());
         g.fill(rect);
+    }
+}
+
+/**
+ * Mapeia valores de teclas pressionados pelo usuário para ações do jogo.
+ */
+enum Tecla {
+    MOVER_N(KeyEvent.VK_W), MOVER_E(KeyEvent.VK_D), MOVER_S(KeyEvent.VK_S), MOVER_W(KeyEvent.VK_A);
+
+    // Inicializa o mapa após todas as chaves terem sido inicializadas.
+    // Baseado em <https://stackoverflow.com/a/536461>.
+    private static HashMap<Integer, Tecla> mapa;
+    static {
+        Tecla.mapa = new HashMap<Integer, Tecla>();
+        for (var i : EnumSet.allOf(Tecla.class)) {
+            Tecla.mapa.put(i.valor, i);
+        }
+    }
+
+    private int valor;
+
+    Tecla(int valor) {
+        this.valor = valor;
+    }
+
+    public static Tecla getTecla(int valor) {
+        return Tecla.mapa.get(valor);
     }
 }

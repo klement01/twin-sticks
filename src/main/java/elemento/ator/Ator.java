@@ -3,15 +3,17 @@
  */
 package elemento.ator;
 
+import elemento.Colisoes;
+import elemento.ElemDinamico;
+import elemento.ator.projetil.Projetil;
+
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
-import elemento.Colisoes;
-import elemento.ElemDinamico;
-
 public abstract class Ator extends ElemDinamico implements Colisoes {
     protected ArrayList<Colisao> filaDeColisoes = new ArrayList<Colisao>();
+    protected ArrayList<Ator> filaDeSpawn = new ArrayList<Ator>();
 
     protected Ator(Point2D.Double posicao, Point2D.Double dimensao) {
         super(posicao, dimensao);
@@ -32,14 +34,26 @@ public abstract class Ator extends ElemDinamico implements Colisoes {
     // Termina de resolver uma colisão do frame anterior.
     protected abstract void resolverColisaoPassada(Colisao c, double dt);
 
-    // Checha se o objeto ainda está vivo, ou seja, se deve
+    // Checa se o objeto ainda está vivo, ou seja, se deve
     // continuar existindo ou se deve ser destruído.
     protected abstract boolean atorVivo();
+
+    // Retorna uma lista dos atores que devem ser adicionados ao campo
+    // após serem criados por esse ator.
+    public final ArrayList<Ator> getSpawns() {
+        @SuppressWarnings("unchecked")
+        var fila = (ArrayList<Ator>) filaDeSpawn.clone();
+        filaDeSpawn.clear();
+        return fila;
+    }
 
     // Obtem o retângulo que representa a colisão do objeto.
     @Override
     public Rectangle2D.Double getRectColisao() {
-        return new Rectangle2D.Double(this.getPosicao().getX(), this.getPosicao().getY(), this.getDimensoes().getX(),
+        return new Rectangle2D.Double(
+                this.getPosicao().getX(),
+                this.getPosicao().getY(),
+                this.getDimensoes().getX(),
                 this.getDimensoes().getY());
     }
 
@@ -59,7 +73,16 @@ public abstract class Ator extends ElemDinamico implements Colisoes {
             // os atores em direções opostas e os colocam na
             // fila de resolução.
 
-            // Primeiro, checa se houve colisão.
+            // Checa se o ator é um projétil. Se sim, checa
+            // se é o dono do projétil
+            if (c instanceof Projetil) {
+                var projetil = (Projetil) c;
+                if (projetil.isDono(this)) {
+                    return;
+                }
+            }
+
+            // Então, checa se houve colisão.
             // Se não houve, retorna.
             Rectangle2D.Double colisaoT = this.getRectColisao();
             Rectangle2D.Double colisaoC = c.getRectColisao();
@@ -115,6 +138,8 @@ public abstract class Ator extends ElemDinamico implements Colisoes {
     // Altera a posição do objeto no frame atual.
     @Override
     public void empurrar(Point2D.Double p) {
-        this.setPosicao(new Point2D.Double(this.getPosicao().getX() + p.getX(), this.getPosicao().getY() + p.getY()));
+        this.setPosicao(
+                new Point2D.Double(
+                        this.getPosicao().getX() + p.getX(), this.getPosicao().getY() + p.getY()));
     }
 }

@@ -6,6 +6,16 @@ package sala;
 
 import static app.Comum.DIMENSOES_QUADRADOS;
 
+import app.Comum.Cardinalidade;
+
+import elemento.Colisoes;
+import elemento.Elemento;
+import elemento.ator.Ator;
+import elemento.ator.Jogador;
+import elemento.parede.Parede;
+import elemento.parede.ParedePadrao;
+import elemento.parede.Porta;
+
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.io.BufferedReader;
@@ -16,15 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
-
-import app.Comum.Cardinalidade;
-import elemento.Colisoes;
-import elemento.Elemento;
-import elemento.ator.Ator;
-import elemento.ator.Jogador;
-import elemento.parede.Parede;
-import elemento.parede.ParedePadrao;
-import elemento.parede.Porta;
 
 public class Sala {
     /*
@@ -57,7 +58,8 @@ public class Sala {
     /**
      * Converte o arquivo em uma matriz 2D contendo todos os caracteres do arquivo.
      */
-    private ArrayList<ArrayList<TipoElemento>> obterMatrizDeArquivo(String caminho) throws IOException {
+    private ArrayList<ArrayList<TipoElemento>> obterMatrizDeArquivo(String caminho)
+            throws IOException {
         var matriz = new ArrayList<ArrayList<TipoElemento>>();
 
         InputStream streamArquivo = getClass().getResourceAsStream(caminho);
@@ -96,7 +98,8 @@ public class Sala {
                 }
 
                 // Determina a posição no grid.
-                var posicao = new Point2D.Double(j * DIMENSOES_QUADRADOS.x, i * DIMENSOES_QUADRADOS.y);
+                var posicao =
+                        new Point2D.Double(j * DIMENSOES_QUADRADOS.x, i * DIMENSOES_QUADRADOS.y);
 
                 // Instancia o elemento adequado e o registra na sala.
                 switch (t) {
@@ -125,7 +128,8 @@ public class Sala {
      * Determina as direções em que uma parede da matriz na posição especificada
      * deve empurrar.
      */
-    private EnumSet<Cardinalidade> determinarCardinalidades(ArrayList<ArrayList<TipoElemento>> matriz, int i, int j) {
+    private EnumSet<Cardinalidade> determinarCardinalidades(
+            ArrayList<ArrayList<TipoElemento>> matriz, int i, int j) {
         // Determina em que direções a parede deve empurrar, checando se existe
         // paredes, acima, abaixo e aos lados.
         var cardinalidades = new ArrayList<Cardinalidade>();
@@ -178,21 +182,42 @@ public class Sala {
         elementos.remove(a);
     }
 
-    private void remover(Parede a) {
-        colisores.remove(a);
-        elementos.remove(a);
-    }
+    // private void remover(Parede a) {
+    //     colisores.remove(a);
+    //     elementos.remove(a);
+    // }
 
     /**
-     * Atualiza os elementos que devem ser atualizados e resolve colisões.
+     * Atualiza os elementos que devem ser atualizados
+     * e resolve colisões e spawns.
      */
     public void atualizar(double dt) {
+        // Atualiza os atores, calculando movimento,
+        // dano, etc.
+        var filaDeRemocao = new ArrayList<Ator>();
+        var filaDeAdicao = new ArrayList<Ator>();
         for (var i : atores) {
             var vivo = i.atualizar(dt);
             if (!vivo) {
-                remover(i);
+                filaDeRemocao.add(i);
+            }
+            for (var j : i.getSpawns()) {
+                filaDeAdicao.add(j);
             }
         }
+
+        // Remove os atores mortos.
+        for (var i : filaDeRemocao) {
+            remover(i);
+        }
+
+        // Adiciona os novos atores.
+        for (var i : filaDeAdicao) {
+            registrar(i);
+        }
+
+        // Resolve as colisões, garantindo que não haja
+        // overlap entre elementos.
         for (int i = 0; i < colisores.size() - 1; i++) {
             for (int j = i + 1; j < colisores.size(); j++) {
                 colisores.get(i).resolverColisaoCom(colisores.get(j));
@@ -216,11 +241,14 @@ public class Sala {
  * Mapeia caracteres para tipos de elementos do jogo.
  */
 enum TipoElemento {
-    VAZIO("-"), PAREDE_PADRAO("#"), PORTA("P");
+    VAZIO("-"),
+    PAREDE_PADRAO("#"),
+    PORTA("P");
 
     // Inicializa o mapa após todas as chaves terem sido inicializadas.
     // Baseado em <https://stackoverflow.com/a/536461>.
     private static HashMap<String, TipoElemento> mapa;
+
     static {
         TipoElemento.mapa = new HashMap<String, TipoElemento>();
         for (var i : EnumSet.allOf(TipoElemento.class)) {

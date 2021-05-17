@@ -4,8 +4,13 @@
 package elemento.ator;
 
 import static app.Comum.DIMENSOES_QUADRADOS;
+
 import static java.lang.Math.abs;
 import static java.lang.Math.hypot;
+
+import elemento.ator.projetil.ProjJogador;
+import elemento.ator.projetil.Projetil;
+import elemento.parede.Parede;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -19,24 +24,23 @@ import java.util.LinkedHashSet;
 
 import javax.swing.JPanel;
 
-import elemento.parede.Parede;
-import sala.Sala;
-
 public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.
     private static final int VIDA_MAX = 6;
-    private static final Point2D.Double DIMENSOES = new Point2D.Double(DIMENSOES_QUADRADOS.x * 9 / 10,
-            DIMENSOES_QUADRADOS.y * 9 / 10);
+    private static final Point2D.Double DIMENSOES =
+            new Point2D.Double(DIMENSOES_QUADRADOS.x * 9 / 10, DIMENSOES_QUADRADOS.y * 9 / 10);
     private static final double VELOCIDADE_MIN = 10;
     private static final double VELOCIDADE_MAX = 175;
-    private static final double ACELERACAO_MAX = 1250;
-    private static final double ESCALA_ATRITO = 10;
+    private static final double ACELERACAO_MAX = 700;
+    private static final double ESCALA_ATRITO = 5;
+    private static final double ATAQUE_PERIODO = 0.25;
+    private static final double ATAQUE_PESO_VELOCIDADE = 0.3;
 
     // Variáveis do jogador.
     private int vida;
     private Point2D.Double velocidade;
-    private Sala sala;
     private LinkedHashSet<Tecla> filaDeEntradas = new LinkedHashSet<Tecla>();
+    private double ataqueTimer;
 
     public Jogador(Point2D.Double posicao, JPanel raiz) {
         super(posicao, Jogador.DIMENSOES);
@@ -53,7 +57,7 @@ public class Jogador extends Ator implements KeyListener {
     private void condicoesIniciais() {
         this.vida = Jogador.VIDA_MAX;
         this.velocidade = new Point2D.Double(0, 0);
-        this.sala = null;
+        this.ataqueTimer = 0;
     }
 
     /*
@@ -78,12 +82,10 @@ public class Jogador extends Ator implements KeyListener {
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {
-    }
+    public void keyTyped(KeyEvent e) {}
 
-    // Por padrão, processa todas as colisões não concluídas e
-    // apaga a lista de colisões para processar. Em seguida,
-    // checa se o ator continua vivo.
+    // Determina o movimento do jogador durante um frame e
+    // checa se ele ainda está vivo.
     @Override
     public boolean atualizar(double dt) {
         // Processa as colisões e checa se o jogador ainda
@@ -92,6 +94,14 @@ public class Jogador extends Ator implements KeyListener {
             return false;
         }
 
+        atualizarPosicao(dt);
+
+        processarAtaques(dt);
+
+        return true;
+    }
+
+    private void atualizarPosicao(double dt) {
         // Determina a aceleração causada pelo jogador.
         double axAtrito = 0;
         double ayAtrito = 0;
@@ -110,6 +120,8 @@ public class Jogador extends Ator implements KeyListener {
                     break;
                 case MOVER_E:
                     axJogador = ACELERACAO_MAX;
+                    break;
+                default:
                     break;
             }
         }
@@ -145,26 +157,83 @@ public class Jogador extends Ator implements KeyListener {
             vy = 0;
         }
         // Adiciona a velocidade à posição.
-        this.setPosicao(new Point2D.Double(this.getPosicao().getX() + vx * dt, this.getPosicao().getY() + vy * dt));
+        this.setPosicao(
+                new Point2D.Double(
+                        this.getPosicao().getX() + vx * dt, this.getPosicao().getY() + vy * dt));
         // Registra a velocidade.
         this.velocidade.setLocation(vx, vy);
+    }
 
-        return true;
+    public void processarAtaques(double dt) {
+        // Se ataqueTimer for maior que 0, ataque ainda
+        // está em cooldown.
+        if (ataqueTimer > 0) {
+            ataqueTimer -= dt;
+        }
+        // Se ataqueTimer for menor ou igual a zero,
+        // checa se o jogador quer atacar.
+        if (ataqueTimer <= 0) {
+            double direcaoX = 0;
+            double direcaoY = 0;
+            for (var i : filaDeEntradas) {
+                switch (i) {
+                    case ATIRAR_N:
+                        direcaoY = -1;
+                        break;
+                    case ATIRAR_S:
+                        direcaoY = 1;
+                        break;
+                    case ATIRAR_W:
+                        direcaoX = -1;
+                        break;
+                    case ATIRAR_E:
+                        direcaoX = 1;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            // Periodo de ataque é somado ao timer em
+            // vez de ataqueTimer = ATAQUE_PERIODO para
+            // garantir periodo consistente quando o jogador
+            // segurar o botão de tiro.
+            if (direcaoX != 0 || direcaoY != 0) {
+                ataqueTimer += ATAQUE_PERIODO;
+                var orientacao =
+                        new Point2D.Double(
+                                direcaoX * VELOCIDADE_MAX
+                                        + ATAQUE_PESO_VELOCIDADE * velocidade.getX(),
+                                direcaoY * VELOCIDADE_MAX
+                                        + ATAQUE_PESO_VELOCIDADE * velocidade.getY());
+                var projetil = new ProjJogador(getVetorCentro(), orientacao, this);
+                filaDeSpawn.add(projetil);
+            } else {
+                ataqueTimer = 0;
+            }
+        }
+
+        return;
     }
 
     // Termina de resolver uma colisão do frame anterior.
     // TODO: determinar efeitos de colisões.
     @Override
     protected void resolverColisaoPassada(Colisao c, double dt) {
+        var colisor = c.getColisor();
         // Se o jogador se chocar com uma parede, reseta sua velocidade no
         // componente adequado.
-        if (c.getColisor() instanceof Parede) {
+        if (colisor instanceof Parede) {
             if (c.getDeslocamento().getX() != 0) {
                 this.velocidade.setLocation(0, this.velocidade.getY());
             }
             if (c.getDeslocamento().getY() != 0) {
                 this.velocidade.setLocation(this.velocidade.getX(), 0);
             }
+        }
+        // Se o jogador se chocar com um projétil, leva dano.
+        else if (colisor instanceof Projetil) {
+            Projetil p = (Projetil) colisor;
+            this.vida += p.getDano();
         }
     }
 
@@ -175,20 +244,18 @@ public class Jogador extends Ator implements KeyListener {
         return this.vida > 0;
     }
 
-    // Registra uma sala com o jogar para que ele possa criar novos objetos
-    // como projéteis.
-    public void registraSala(Sala sala) {
-        this.sala = sala;
-    }
-
     // Desenha o objeto na tela, levando em consideração a posição
     // da câmera relativa ao número.
     // TODO: gráficos para o jogador.
     @Override
     public void desenhar(Point2D.Double camera, Graphics2D g) {
         g.setColor(Color.RED);
-        var rect = new Rectangle2D.Double(this.getPosicao().getX() - camera.getX(),
-                this.getPosicao().getY() - camera.getY(), this.getDimensoes().getX(), this.getDimensoes().getY());
+        var rect =
+                new Rectangle2D.Double(
+                        this.getPosicao().getX() - camera.getX(),
+                        this.getPosicao().getY() - camera.getY(),
+                        this.getDimensoes().getX(),
+                        this.getDimensoes().getY());
         g.fill(rect);
     }
 }
@@ -197,11 +264,19 @@ public class Jogador extends Ator implements KeyListener {
  * Mapeia valores de teclas pressionados pelo usuário para ações do jogo.
  */
 enum Tecla {
-    MOVER_N(KeyEvent.VK_W), MOVER_E(KeyEvent.VK_D), MOVER_S(KeyEvent.VK_S), MOVER_W(KeyEvent.VK_A);
+    MOVER_N(KeyEvent.VK_W),
+    MOVER_E(KeyEvent.VK_D),
+    MOVER_S(KeyEvent.VK_S),
+    MOVER_W(KeyEvent.VK_A),
+    ATIRAR_N(KeyEvent.VK_UP),
+    ATIRAR_E(KeyEvent.VK_RIGHT),
+    ATIRAR_S(KeyEvent.VK_DOWN),
+    ATIRAR_W(KeyEvent.VK_LEFT);
 
     // Inicializa o mapa após todas as chaves terem sido inicializadas.
     // Baseado em <https://stackoverflow.com/a/536461>.
     private static HashMap<Integer, Tecla> mapa;
+
     static {
         Tecla.mapa = new HashMap<Integer, Tecla>();
         for (var i : EnumSet.allOf(Tecla.class)) {

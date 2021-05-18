@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.function.BiPredicate;
+import java.util.function.IntFunction;
 
 public class Sala {
     /*
@@ -130,21 +132,41 @@ public class Sala {
      */
     private EnumSet<Cardinalidade> determinarCardinalidades(
             ArrayList<ArrayList<TipoElemento>> matriz, int i, int j) {
+        // Limites das arrays.
+        int MAX_I = matriz.size() - 1;
+        IntFunction<Integer> maxJ = k -> matriz.get(k).size() - 1;
+        BiPredicate<Integer, Integer> isLivre = (a, b) -> !matriz.get(a).get(b).isParede();
+
         // Determina em que direções a parede deve empurrar, checando se existe
         // paredes, acima, abaixo e aos lados.
         var cardinalidades = new ArrayList<Cardinalidade>();
-        if (i > 0 && !matriz.get(i - 1).get(j).isParede()) {
+        if (i > 0 && isLivre.test(i - 1, j)) {
             cardinalidades.add(Cardinalidade.NORTE);
         }
-        if (i < matriz.size() - 1 && !matriz.get(i + 1).get(j).isParede()) {
+        if (i < MAX_I && isLivre.test(i + 1, j)) {
             cardinalidades.add(Cardinalidade.SUL);
         }
-        if (j > 0 && !matriz.get(i).get(j - 1).isParede()) {
+        if (j > 0 && isLivre.test(i, j - 1)) {
             cardinalidades.add(Cardinalidade.OESTE);
         }
-        if (j < matriz.get(i).size() - 1 && !matriz.get(i).get(j + 1).isParede()) {
+        if (j < maxJ.apply(i) && isLivre.test(i, j + 1)) {
             cardinalidades.add(Cardinalidade.LESTE);
         }
+
+        // Confere as diagonais.
+        if (i > 0 && j < maxJ.apply(i) && isLivre.test(i - 1, j + 1)) {
+            cardinalidades.add(Cardinalidade.NORDESTE);
+        }
+        if (i < MAX_I && j < maxJ.apply(i) && isLivre.test(i + 1, j + 1)) {
+            cardinalidades.add(Cardinalidade.SUDESTE);
+        }
+        if (i < MAX_I && j > 0 && isLivre.test(i + 1, j - 1)) {
+            cardinalidades.add(Cardinalidade.SUDOESTE);
+        }
+        if (i > 0 && j > 0 && isLivre.test(i - 1, j - 1)) {
+            cardinalidades.add(Cardinalidade.NOROESTE);
+        }
+
         // Cria um conjunto com as cardinalidades adequadas.
         if (cardinalidades.size() == 0) {
             return EnumSet.noneOf(Cardinalidade.class);

@@ -18,9 +18,16 @@ public class Comum {
 
     // Quadros por segundo a serem renderizados.
     public static final int FPS_ALVO = 60;
-    
+
     // Direções.
     public enum Cardinalidade {
-        NORTE, LESTE, SUL, OESTE
+        NORTE,
+        LESTE,
+        SUL,
+        OESTE,
+        NORDESTE,
+        SUDESTE,
+        SUDOESTE,
+        NOROESTE
     };
 }

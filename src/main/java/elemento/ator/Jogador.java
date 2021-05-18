@@ -3,21 +3,19 @@
  */
 package elemento.ator;
 
-import static app.Comum.DIMENSOES_QUADRADOS;
-
 import static java.lang.Math.abs;
+import static java.lang.Math.atan2;
 import static java.lang.Math.hypot;
 
 import elemento.ator.projetil.ProjJogador;
 import elemento.ator.projetil.Projetil;
 import elemento.parede.Parede;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -27,20 +25,24 @@ import javax.swing.JPanel;
 public class Jogador extends Ator implements KeyListener {
     // Constantes do jogador.
     private static final int VIDA_MAX = 6;
-    private static final Point2D.Double DIMENSOES =
-            new Point2D.Double(DIMENSOES_QUADRADOS.x * 9 / 10, DIMENSOES_QUADRADOS.y * 9 / 10);
+    private static final Point2D.Double DIMENSOES = new Point2D.Double(29, 29);
     private static final double VELOCIDADE_MIN = 10;
     private static final double VELOCIDADE_MAX = 175;
     private static final double ACELERACAO_MAX = 700;
     private static final double ESCALA_ATRITO = 5;
     private static final double ATAQUE_PERIODO = 0.25;
     private static final double ATAQUE_PESO_VELOCIDADE = 0.3;
+    private static final double ANIMACAO_DIST_MAX = 10;
 
     // Variáveis do jogador.
     private int vida;
     private Point2D.Double velocidade;
+    private Point2D.Double orientacaoCanhao;
+    private Point2D.Double orientacaoTanque;
+    private Point2D.Double aceleraçãoJogador;
     private LinkedHashSet<Tecla> filaDeEntradas = new LinkedHashSet<Tecla>();
     private double ataqueTimer;
+    private double animacaoDist;
 
     public Jogador(Point2D.Double posicao, JPanel raiz) {
         super(posicao, Jogador.DIMENSOES);
@@ -57,7 +59,11 @@ public class Jogador extends Ator implements KeyListener {
     private void condicoesIniciais() {
         this.vida = Jogador.VIDA_MAX;
         this.velocidade = new Point2D.Double(0, 0);
+        this.orientacaoTanque = new Point2D.Double(0, 1);
+        this.orientacaoCanhao = new Point2D.Double(0, 1);
+        this.aceleraçãoJogador = new Point2D.Double(0, 1);
         this.ataqueTimer = 0;
+        this.animacaoDist = 0;
     }
 
     /*
@@ -84,8 +90,10 @@ public class Jogador extends Ator implements KeyListener {
     @Override
     public void keyTyped(KeyEvent e) {}
 
-    // Determina o movimento do jogador durante um frame e
-    // checa se ele ainda está vivo.
+    /*
+     * Determina o movimento do jogador, processa seus ataques
+     * e os desenha.
+     */
     @Override
     public boolean atualizar(double dt) {
         // Processa as colisões e checa se o jogador ainda
@@ -125,6 +133,7 @@ public class Jogador extends Ator implements KeyListener {
                     break;
             }
         }
+        this.aceleraçãoJogador.setLocation(axJogador, ayJogador);
         // Calcula a aceleração causada por atrito.
         if (axJogador == 0) {
             axAtrito = -this.velocidade.getX() * ESCALA_ATRITO;
@@ -162,37 +171,46 @@ public class Jogador extends Ator implements KeyListener {
                         this.getPosicao().getX() + vx * dt, this.getPosicao().getY() + vy * dt));
         // Registra a velocidade.
         this.velocidade.setLocation(vx, vy);
+        // Determina a distância total percorrida pra fins
+        // de animacao.
+        this.animacaoDist += hypot(vx, vy) * dt;
     }
 
     public void processarAtaques(double dt) {
+        // Determina a direção do canhão.
+        double direcaoX = 0;
+        double direcaoY = 0;
+        for (var i : filaDeEntradas) {
+            switch (i) {
+                case ATIRAR_N:
+                    direcaoY = -1;
+                    break;
+                case ATIRAR_S:
+                    direcaoY = 1;
+                    break;
+                case ATIRAR_W:
+                    direcaoX = -1;
+                    break;
+                case ATIRAR_E:
+                    direcaoX = 1;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (direcaoX != 0 || direcaoY != 0) {
+            this.orientacaoCanhao.setLocation(direcaoX, direcaoY);
+        }
+
         // Se ataqueTimer for maior que 0, ataque ainda
         // está em cooldown.
         if (ataqueTimer > 0) {
             ataqueTimer -= dt;
         }
+
         // Se ataqueTimer for menor ou igual a zero,
         // checa se o jogador quer atacar.
         if (ataqueTimer <= 0) {
-            double direcaoX = 0;
-            double direcaoY = 0;
-            for (var i : filaDeEntradas) {
-                switch (i) {
-                    case ATIRAR_N:
-                        direcaoY = -1;
-                        break;
-                    case ATIRAR_S:
-                        direcaoY = 1;
-                        break;
-                    case ATIRAR_W:
-                        direcaoX = -1;
-                        break;
-                    case ATIRAR_E:
-                        direcaoX = 1;
-                        break;
-                    default:
-                        break;
-                }
-            }
             // Periodo de ataque é somado ao timer em
             // vez de ataqueTimer = ATAQUE_PERIODO para
             // garantir periodo consistente quando o jogador
@@ -216,7 +234,6 @@ public class Jogador extends Ator implements KeyListener {
     }
 
     // Termina de resolver uma colisão do frame anterior.
-    // TODO: determinar efeitos de colisões.
     @Override
     protected void resolverColisaoPassada(Colisao c, double dt) {
         var colisor = c.getColisor();
@@ -246,17 +263,30 @@ public class Jogador extends Ator implements KeyListener {
 
     // Desenha o objeto na tela, levando em consideração a posição
     // da câmera relativa ao número.
-    // TODO: gráficos para o jogador.
     @Override
     public void desenhar(Point2D.Double camera, Graphics2D g) {
-        g.setColor(Color.RED);
-        var rect =
-                new Rectangle2D.Double(
-                        this.getPosicao().getX() - camera.getX(),
-                        this.getPosicao().getY() - camera.getY(),
-                        this.getDimensoes().getX(),
-                        this.getDimensoes().getY());
-        g.fill(rect);
+        // Se o tanque não estiver parado, atualiza sua orientação
+        // de acordo com sua velocidade.
+        if (this.aceleraçãoJogador.getX() != 0 || this.aceleraçãoJogador.getY() != 0) {
+            this.orientacaoTanque.setLocation(velocidade);
+        }
+
+        // Se o tanque se movimentou o suficiente, avança sua animação.
+        if (this.animacaoDist >= Jogador.ANIMACAO_DIST_MAX) {
+            Grafico.BASE.avancarAnimacao();
+            this.animacaoDist -= Jogador.ANIMACAO_DIST_MAX;
+        }
+
+        // Desenha a base a o canhão centralizados sobre o tanque.
+        Grafico.BASE.desenhar(this.getPosicao(), g, this.orientacaoTanque);
+
+        double px =
+                this.getPosicao().getX()
+                        + (Jogador.DIMENSOES.getX() - Grafico.CANO.getDimensoes().getX()) / 2;
+        double py =
+                this.getPosicao().getY()
+                        + (Jogador.DIMENSOES.getY() - Grafico.CANO.getDimensoes().getY()) / 2;
+        Grafico.CANO.desenhar(new Point2D.Double(px, py), g, this.orientacaoCanhao);
     }
 }
 
@@ -292,5 +322,47 @@ enum Tecla {
 
     public static Tecla getTecla(int valor) {
         return Tecla.mapa.get(valor);
+    }
+}
+
+/**
+ * Carrega os arquivos de gráfico do jogador.
+ */
+enum Grafico {
+    BASE("base", 4, "png"),
+    CANO("cano", 1, "png");
+
+    private static final String CAMINHO = "tanque";
+
+    private final ArrayList<grafico.Grafico> grafs;
+
+    private int frame;
+
+    Grafico(String pasta, int numFrames, String extensao) {
+        this.grafs = new ArrayList<grafico.Grafico>();
+        for (var i = 1; i <= numFrames; i++) {
+            var caminho = String.format("%s/%s/%d.%s", CAMINHO, pasta, i, extensao);
+            grafs.add(grafico.Grafico.carregar(caminho));
+        }
+        this.frame = 0;
+    }
+
+    public void desenhar(Point2D.Double posicao, Graphics2D g, Point2D.Double orientacao) {
+        double angulo = atan2(orientacao.getY(), orientacao.getX());
+        this.grafs.get(this.frame).desenhar(g, posicao, 1, angulo);
+    }
+
+    // Avança um frame da animação, recomeçando do início se
+    // necessário.
+    public void avancarAnimacao() {
+        this.frame++;
+        if (this.frame >= this.grafs.size()) {
+            this.frame = 0;
+        }
+    }
+
+    // Retorna as dimensoes do frame atual.
+    public Point2D.Double getDimensoes() {
+        return this.grafs.get(frame).getDimensoes();
     }
 }

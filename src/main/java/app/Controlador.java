@@ -9,7 +9,7 @@ import static app.Comum.FPS_ALVO;
 
 import elemento.ator.Jogador;
 
-import sala.Sala;
+import sala.Mapa;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -18,8 +18,6 @@ import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.Point2D;
-import java.io.IOException;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -52,35 +50,19 @@ class Controlador extends JPanel {
         timer.start();
     }
 
-    // Posição da camera em relação ao mundo.
-    private Point2D.Double camera;
-
     // Objeto do jogador.
     private Jogador jogador;
 
-    // TODO: remover sala de teste.
-    private Sala sala;
+    // Mapa do jogo.
+    private Mapa mapa;
 
     private void inicializarObjetos() {
-        this.camera = new Point2D.Double(0, 0);
-        this.jogador =
-                new Jogador(
-                        new Point2D.Double(
-                                DIMENSOES_CAMPO.getWidth() / 2 - 30,
-                                DIMENSOES_CAMPO.getHeight() / 2 - 30),
-                        this);
-        try {
-            this.sala = new Sala("sala_teste.txt");
-        } catch (IOException e) {
-            System.err.println("Erro carregando arquivo: " + e);
-            System.exit(1);
-        }
-        this.sala.registrarJogador(jogador);
+        this.jogador = new Jogador(this);
+        this.mapa = new Mapa(jogador);
     }
 
     private void atualizar(double dt) {
-        // TODO: remover sala teste.
-        sala.atualizar(dt);
+        this.mapa.atualizar(dt);
 
         // Redesenha a cena.
         repaint();
@@ -109,8 +91,7 @@ class Controlador extends JPanel {
                 RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
-        // TODO: remover sala teste.
-        sala.desenhar(camera, g2d);
+        this.mapa.desenhar(g2d);
 
         // Sincroniza o estado dos gráficos, garantindo que
         // a imagem mostrada seja atual. Útil para animação.

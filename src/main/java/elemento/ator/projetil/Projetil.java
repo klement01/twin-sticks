@@ -5,22 +5,38 @@
  */
 package elemento.ator.projetil;
 
+import static java.lang.Math.atan2;
+
+import elemento.Colisoes;
 import elemento.Elemento;
 import elemento.ator.Ator;
 
-import java.awt.Color;
+import grafico.Grafico;
+
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 
 public abstract class Projetil extends Ator {
+    protected static final String CAMINHO = "projeteis/";
+
     protected final Elemento dono;
+    protected final Grafico grafico;
+    protected Point2D.Double velocidade = new Point2D.Double();
 
     private boolean vivo = true;
 
-    public Projetil(Point2D.Double posicao, Point2D.Double dimensao, Elemento dono) {
-        super(posicao, dimensao);
+    protected Projetil(
+            Point2D.Double posicao, Point2D.Double orientacao, Elemento dono, Grafico grafico) {
+        super(posicao, grafico.getDimensoes());
         this.dono = dono;
+        this.grafico = grafico;
+    }
+
+    protected static Point2D.Double centralizarProjetil(Point2D.Double posicao, Grafico grafico) {
+        Point2D.Double dimensoes = grafico.getDimensoes();
+        double px = posicao.getX() - dimensoes.getX() / 2;
+        double py = posicao.getY() - dimensoes.getY() / 2;
+        return new Point2D.Double(px, py);
     }
 
     @Override
@@ -30,11 +46,16 @@ public abstract class Projetil extends Ator {
         if (!super.atualizar(dt)) {
             return false;
         }
+
+        // Calcula a nova posição do projétil baseado
+        // em sua velocidade.
         var velocidade = getVelocidade();
         double dx = velocidade.getX() * dt;
         double dy = velocidade.getY() * dt;
+
         var posicao = getPosicao();
-        setPosicao(new Point2D.Double(posicao.getX() + dx, posicao.getY() + dy));
+        this.setPosicao(new Point2D.Double(posicao.getX() + dx, posicao.getY() + dy));
+
         return true;
     }
 
@@ -43,7 +64,15 @@ public abstract class Projetil extends Ator {
     public abstract int getDano();
 
     // Retorna a velocidade do projétil no frame atual.
-    public abstract Point2D.Double getVelocidade();
+    protected Point2D.Double getVelocidade() {
+        return this.velocidade;
+    }
+
+    // Retorna o ângulo com o semieixo x positivo no sentido
+    // anti-horário.
+    protected final double getAngulo() {
+        return atan2(this.getVelocidade().getY(), this.getVelocidade().getX());
+    }
 
     // Checa se o elemento é dono desse projétil.
     public final boolean isDono(Elemento c) {
@@ -55,7 +84,7 @@ public abstract class Projetil extends Ator {
     @Override
     protected void resolverColisaoPassada(Colisao c, double dt) {
         var colisor = c.getColisor();
-        if (colisor != dono && !(colisor instanceof Projetil)) {
+        if (colisor != dono) {
             vivo = false;
         }
     }
@@ -65,17 +94,21 @@ public abstract class Projetil extends Ator {
         return this.vivo;
     }
 
-    // Desenha um projétil genérico na tela.
-    // TODO: gráficos para projéteis.
     @Override
     public void desenhar(Point2D.Double camera, Graphics2D g) {
-        g.setColor(Color.MAGENTA);
-        var rect =
-                new Rectangle2D.Double(
-                        this.getPosicao().getX() - camera.getX(),
-                        this.getPosicao().getY() - camera.getY(),
-                        this.getDimensoes().getX(),
-                        this.getDimensoes().getY());
-        g.fill(rect);
+        double cx = this.getPosicao().getX() - camera.getX();
+        double cy = this.getPosicao().getY() - camera.getY();
+        this.grafico.desenhar(g, new Point2D.Double(cx, cy), 1, this.getAngulo());
+    }
+
+    // Se ambos os colisores forem projéteis, ignora a colisão.
+    // Se não, deixa o outro objeto lidar com a colisão.
+    @Override
+    public void resolverColisaoCom(Colisoes c) {
+        if (c instanceof Projetil) {
+            return;
+        } else {
+            c.resolverColisaoCom(this);
+        }
     }
 }

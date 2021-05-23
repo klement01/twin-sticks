@@ -8,86 +8,64 @@ import static app.Comum.DIMENSOES_QUADRADOS;
 
 import app.Comum.Cardinalidade;
 
+import elemento.Chao;
 import elemento.Colisoes;
 import elemento.Elemento;
 import elemento.ator.Ator;
 import elemento.ator.Jogador;
-import elemento.parede.Parede;
-import elemento.parede.ParedePadrao;
-import elemento.parede.Porta;
+import elemento.ator.inimigo.*;
+import elemento.ator.projetil.Projetil;
+import elemento.parede.*;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.function.BiPredicate;
 import java.util.function.IntFunction;
 
 public class Sala {
     /*
-     * Caminho para os arquivos de sala.
-     */
-    private static final String SALAS = "/salas/";
-
-    /*
      * Direções em que a sala pode ser acessada.
      */
-    /* private final EnumSet<Cardinalidade> cardinalidades; */
+    private EnumSet<Cardinalidade> acessos = null;
 
     /*
      * Listas dos elementos contidos na sala.
      */
     private Jogador jogador = null;
 
+    private Chao chao = null;
+
     private ArrayList<Elemento> elementos = new ArrayList<Elemento>();
+    private ArrayList<Inimigo> inimigos = new ArrayList<Inimigo>();
     private ArrayList<Ator> atores = new ArrayList<Ator>();
     private ArrayList<Colisoes> colisores = new ArrayList<Colisoes>();
+    private ArrayList<Porta> portas = new ArrayList<Porta>();
 
     /**
      * Inicializa a sala da pasta de salas com o nome especificado.
      */
-    public Sala(String nome) throws IOException {
-        var matriz = obterMatrizDeArquivo(SALAS + nome);
-        processarMatrizDeSala(matriz);
-    }
-
-    /**
-     * Converte o arquivo em uma matriz 2D contendo todos os caracteres do arquivo.
-     */
-    private ArrayList<ArrayList<TipoElemento>> obterMatrizDeArquivo(String caminho)
-            throws IOException {
-        var matriz = new ArrayList<ArrayList<TipoElemento>>();
-
-        InputStream streamArquivo = getClass().getResourceAsStream(caminho);
-        BufferedReader arquivo = new BufferedReader(new InputStreamReader(streamArquivo));
-        ;
-
-        String linha;
-        while ((linha = arquivo.readLine()) != null) {
-            var valoresLinha = Arrays.asList(linha.trim().split(""));
-            var linhaProcessada = new ArrayList<TipoElemento>();
-            for (var i : valoresLinha) {
-                linhaProcessada.add(TipoElemento.getTipoElemento(i));
-            }
-            matriz.add(linhaProcessada);
+    public Sala(Planta planta, EnumSet<Cardinalidade> acessos) throws IllegalArgumentException {
+        if (!planta.getAcessosPossiveis().containsAll(acessos)) {
+            throw new IllegalArgumentException("Planta não contém os acessos necessário.");
         }
-
-        arquivo.close();
-
-        return matriz;
+        this.acessos = acessos;
+        processarMatrizDeSala(planta.getMatrizSala());
     }
 
     /**
      * Processa uma matriz representando uma sala, convertendo seus caracteres em
      * objetos do jogo.
      */
-    private void processarMatrizDeSala(ArrayList<ArrayList<TipoElemento>> matriz) {
+    private void processarMatrizDeSala(ArrayList<ArrayList<TipoElemento>> matriz)
+            throws IllegalArgumentException {
+        this.chao = new Chao();
+
+        // Substitui as portas genéricas por portas adequadas
+        // ou por paredes.
+        preprocessarPortas(matriz);
+
         // Itera sobre todos os elementos.
         for (int i = 0; i < matriz.size(); i++) {
             var linha = matriz.get(i);
@@ -103,25 +81,87 @@ public class Sala {
                 var posicao =
                         new Point2D.Double(j * DIMENSOES_QUADRADOS.x, i * DIMENSOES_QUADRADOS.y);
 
+                // Determina as cardinalidades de colisão, caos o objeto seja uma parede.
+                var cardinalidades = determinarCardinalidades(matriz, i, j);
+
                 // Instancia o elemento adequado e o registra na sala.
                 switch (t) {
                     case PORTA:
-                        Porta porta;
-                        if (i == 0 || i == matriz.size() - 1) {
-                            porta = Porta.portaHorizontal(posicao);
-                        } else {
-                            porta = Porta.portaVertical(posicao);
-                        }
-                        registrar(porta);
+                        throw new IllegalArgumentException("Porta não alinhada com paredes.");
+                        // break;
+                    case PORTA_N:
+                        registrar(new Porta(posicao, Cardinalidade.NORTE));
+                        break;
+                    case PORTA_E:
+                        registrar(new Porta(posicao, Cardinalidade.LESTE));
+                        break;
+                    case PORTA_S:
+                        registrar(new Porta(posicao, Cardinalidade.SUL));
+                        break;
+                    case PORTA_W:
+                        registrar(new Porta(posicao, Cardinalidade.OESTE));
                         break;
                     case PAREDE_PADRAO:
-                        var cardinalidades = determinarCardinalidades(matriz, i, j);
-                        var parede = new ParedePadrao(posicao, cardinalidades);
-                        registrar(parede);
+                        registrar(new ParedePadrao(posicao, cardinalidades));
+                        break;
+                    case TRELICA:
+                        registrar(new Trelica(posicao, cardinalidades));
+                        break;
+                    case SNIPER:
+                        registrar(new Sniper(posicao));
                         break;
                     default:
                         break;
                 }
+            }
+        }
+    }
+
+    /**
+     * Transforma as portas genéricas nas portas adequadas
+     * ou paredes, dependendo dos acessos da sala.
+     */
+    private void preprocessarPortas(ArrayList<ArrayList<TipoElemento>> matriz)
+            throws IllegalArgumentException {
+        /// Itera sobre todos os elementos da matriz.
+        for (var i = 0; i < matriz.size(); i++) {
+            var linha = matriz.get(i);
+            for (var j = 0; j < linha.size(); j++) {
+                // Se o elemento não é uma porta, não faz nada.
+                if (linha.get(j) != TipoElemento.PORTA) {
+                    continue;
+                }
+
+                // Se o elemento é uma porta, o substitui por
+                // uma porta adequada ou parede.
+                if (i == 0) {
+                    if (this.acessos.contains(Cardinalidade.NORTE)) {
+                        linha.set(j, TipoElemento.PORTA_N);
+                    } else {
+                        linha.set(j, TipoElemento.PAREDE_PADRAO);
+                    }
+                } else if (j == 0) {
+                    if (this.acessos.contains(Cardinalidade.OESTE)) {
+                        linha.set(j, TipoElemento.PORTA_W);
+                    } else {
+                        linha.set(j, TipoElemento.PAREDE_PADRAO);
+                    }
+                } else if (j == linha.size() - 1) {
+                    if (this.acessos.contains(Cardinalidade.LESTE)) {
+                        linha.set(j, TipoElemento.PORTA_E);
+                    } else {
+                        linha.set(j, TipoElemento.PAREDE_PADRAO);
+                    }
+                } else if (i == matriz.size() - 1) {
+                    if (this.acessos.contains(Cardinalidade.SUL)) {
+                        linha.set(j, TipoElemento.PORTA_S);
+                    } else {
+                        linha.set(j, TipoElemento.PAREDE_PADRAO);
+                    }
+                } else {
+                    throw new IllegalArgumentException("Porta não alinhada com paredes.");
+                }
+                matriz.set(i, linha);
             }
         }
     }
@@ -177,65 +217,85 @@ public class Sala {
     /**
      * Métodos para adicionar e remover objetos nas arrays adequadas.
      */
-    public void registrarJogador(Jogador a) {
-        registrar(a);
-        this.jogador = a;
-    }
 
-    private void registrar(Ator a) {
+    // Adição.
+    public void registrar(Ator a) {
         atores.add(a);
         colisores.add(a);
         elementos.add(a);
+        if (a instanceof Inimigo) {
+            _registrar((Inimigo) a);
+        } else if (a instanceof Jogador) {
+            _registrar((Jogador) a);
+        }
     }
 
-    private void registrar(Parede a) {
+    private void _registrar(Jogador a) {
+        this.jogador = a;
+    }
+
+    private void _registrar(Inimigo a) {
+        inimigos.add(a);
+    }
+
+    public void registrar(Parede a) {
         colisores.add(a);
         elementos.add(a);
+        if (a instanceof Porta) {
+            _registrar((Porta) a);
+        }
     }
 
-    public void removerJogador(Jogador a) {
-        remover(a);
-        this.jogador = null;
+    private void _registrar(Porta a) {
+        portas.add(a);
     }
 
-    private void remover(Ator a) {
+    // Remoção.
+    public void remover(Ator a) {
         atores.remove(a);
         colisores.remove(a);
         elementos.remove(a);
+        if (a instanceof Inimigo) {
+            _remover((Inimigo) a);
+        } else if (a instanceof Jogador) {
+            _remover((Jogador) a);
+        }
     }
 
-    // private void remover(Parede a) {
-    //     colisores.remove(a);
-    //     elementos.remove(a);
-    // }
+    private void _remover(Jogador a) {
+        this.jogador = null;
+    }
+
+    private void _remover(Inimigo a) {
+        inimigos.remove(a);
+    }
 
     /**
      * Atualiza os elementos que devem ser atualizados
      * e resolve colisões e spawns.
      */
-    public void atualizar(double dt) {
-        // Atualiza os atores, calculando movimento,
-        // dano, etc.
-        var filaDeRemocao = new ArrayList<Ator>();
-        var filaDeAdicao = new ArrayList<Ator>();
-        for (var i : atores) {
-            var vivo = i.atualizar(dt);
-            if (!vivo) {
-                filaDeRemocao.add(i);
-            }
-            for (var j : i.getSpawns()) {
-                filaDeAdicao.add(j);
-            }
-        }
+    private ArrayList<Ator> filaDeRemocao = new ArrayList<Ator>();
 
-        // Remove os atores mortos.
-        for (var i : filaDeRemocao) {
-            remover(i);
+    private ArrayList<Ator> filaDeAdicao = new ArrayList<Ator>();
+
+    public void atualizar(double dt) {
+        // Se a sala tentar atualizar enquanto o jogador não
+        // estiver registrado, retorna.
+        if (this.jogador == null) {
+            return;
         }
 
         // Adiciona os novos atores.
         for (var i : filaDeAdicao) {
             registrar(i);
+        }
+        filaDeAdicao.clear();
+
+        // Informa a posição do jogador aos inimigos.
+        var posJogador = jogador.getPosicao();
+
+        for (var i : inimigos) {
+            i.registrarPosJogador(posJogador);
         }
 
         // Resolve as colisões, garantindo que não haja
@@ -245,58 +305,71 @@ public class Sala {
                 colisores.get(i).resolverColisaoCom(colisores.get(j));
             }
         }
+
+        // Atualiza os atores, calculando movimento,
+        // dano, etc.
+        for (var i : atores) {
+            var vivo = i.atualizar(dt);
+            if (!vivo) {
+                this.filaDeRemocao.add(i);
+            }
+            for (var j : i.getSpawns()) {
+                this.filaDeAdicao.add(j);
+            }
+        }
+
+        // Remove os atores mortos.
+        for (var i : filaDeRemocao) {
+            remover(i);
+        }
+
+        // Se todos os inimigos estiverem mortos, abre as portas.
+        if (this.inimigos.isEmpty()) {
+            for (var i : portas) {
+                i.avancarAnimacao(dt);
+            }
+        }
     }
 
     public void desenhar(Point2D.Double camera, Graphics2D g) {
-        // TODO: manipular câmera para permitir scrolling.
-
         /**
          * Desenha todos os elementos na tela.
          */
+        this.chao.desenhar(camera, g);
         for (var i : elementos) {
             i.desenhar(camera, g);
         }
     }
-}
 
-/**
- * Mapeia caracteres para tipos de elementos do jogo.
- */
-enum TipoElemento {
-    VAZIO("-"),
-    PAREDE_PADRAO("#"),
-    PORTA("P");
-
-    // Inicializa o mapa após todas as chaves terem sido inicializadas.
-    // Baseado em <https://stackoverflow.com/a/536461>.
-    private static HashMap<String, TipoElemento> mapa;
-
-    static {
-        TipoElemento.mapa = new HashMap<String, TipoElemento>();
-        for (var i : EnumSet.allOf(TipoElemento.class)) {
-            TipoElemento.mapa.put(i.valor, i);
+    public Cardinalidade getTransicao() {
+        if (!this.inimigos.isEmpty()) {
+            return null;
+        } else {
+            return jogador.getTransicao();
         }
     }
 
-    // Tipos de elementos que contam como uma parede.
-    private static final EnumSet<TipoElemento> TiposParede = EnumSet.of(PAREDE_PADRAO);
-
-    private String valor;
-
-    TipoElemento(String valor) {
-        this.valor = valor;
-    }
-
-    public static TipoElemento getTipoElemento(String chave) {
-        // Qualquer chave não identificada conta como vazia.
-        var tipo = TipoElemento.mapa.get(chave);
-        if (tipo == null) {
-            tipo = VAZIO;
+    /*
+     * Finaliza qualquer processo em andamento antes de ceder
+     * controle.
+     */
+    public void finalizar() {
+        // Completa as animações de todas as portas.
+        for (var i : this.portas) {
+            i.completarAnimacao();
         }
-        return tipo;
-    }
 
-    public boolean isParede() {
-        return TiposParede.contains(this);
+        // Limpa as filas de adição e remoção
+        // e remove todos os projéteis.
+        this.filaDeAdicao.clear();
+        for (var i : this.atores) {
+            if (i instanceof Projetil) {
+                this.filaDeRemocao.add(i);
+            }
+        }
+        for (var i : filaDeRemocao) {
+            this.remover(i);
+        }
+        this.filaDeRemocao.clear();
     }
 }

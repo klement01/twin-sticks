@@ -3,13 +3,21 @@
  */
 package elemento.ator;
 
+import static app.Comum.Cardinalidade;
+import static app.Comum.DIMENSOES_CAMPO;
+import static app.Comum.DIMENSOES_QUADRADOS;
+
 import static java.lang.Math.abs;
 import static java.lang.Math.atan2;
+import static java.lang.Math.floor;
 import static java.lang.Math.hypot;
 
+import elemento.HUD;
+import elemento.ator.inimigo.Inimigo;
 import elemento.ator.projetil.ProjJogador;
 import elemento.ator.projetil.Projetil;
 import elemento.parede.Parede;
+import elemento.parede.Porta;
 
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
@@ -43,9 +51,11 @@ public class Jogador extends Ator implements KeyListener {
     private LinkedHashSet<Tecla> filaDeEntradas = new LinkedHashSet<Tecla>();
     private double ataqueTimer;
     private double animacaoDist;
+    private Cardinalidade transicao;
+    private HUD hud;
 
-    public Jogador(Point2D.Double posicao, JPanel raiz) {
-        super(posicao, Jogador.DIMENSOES);
+    public Jogador(JPanel raiz) {
+        super(new Point2D.Double(), Jogador.DIMENSOES);
 
         // Registra a resposta de entradas do jogador no
         // componente raiz do jogo.
@@ -64,6 +74,52 @@ public class Jogador extends Ator implements KeyListener {
         this.aceleraçãoJogador = new Point2D.Double(0, 1);
         this.ataqueTimer = 0;
         this.animacaoDist = 0;
+        this.transicao = null;
+        this.hud = new HUD();
+        this.setPosicao(Cardinalidade.CENTRO);
+    }
+
+    // Move o jogador para um local pré-definido do campo.
+    public void setPosicao(Cardinalidade posicao) {
+        // Offset causado pelo tamanho do tanque.
+        double offX = (DIMENSOES_QUADRADOS.getX() - this.getDimensoes().getX()) / 2;
+        double offY = (DIMENSOES_QUADRADOS.getY() - this.getDimensoes().getY()) / 2;
+
+        // Posição central.
+        double posX =
+                DIMENSOES_QUADRADOS.getX()
+                        * floor((DIMENSOES_CAMPO.width / 2) / DIMENSOES_QUADRADOS.getX());
+        double posY =
+                DIMENSOES_QUADRADOS.getY()
+                        * floor((DIMENSOES_CAMPO.height / 2) / DIMENSOES_QUADRADOS.getY());
+
+        // Offsets causados pela posição do tanque dentro
+        // da sala.
+        double OFF_X =
+                DIMENSOES_QUADRADOS.getX()
+                        * (floor((DIMENSOES_CAMPO.width / 2) / DIMENSOES_QUADRADOS.getX()) - 1);
+        double OFF_Y =
+                DIMENSOES_QUADRADOS.getY()
+                        * (floor((DIMENSOES_CAMPO.height / 2) / DIMENSOES_QUADRADOS.getY()) - 1);
+        switch (posicao) {
+            case NORTE:
+                offY -= OFF_Y;
+                break;
+            case SUL:
+                offY += OFF_Y;
+                break;
+            case OESTE:
+                offX -= OFF_X;
+                break;
+            case LESTE:
+                offX += OFF_X;
+                break;
+            default:
+                break;
+        }
+
+        this.setPosicao(new Point2D.Double(posX + offX, posY + offY));
+        this.velocidade.setLocation(0, 0);
     }
 
     /*
@@ -98,6 +154,7 @@ public class Jogador extends Ator implements KeyListener {
     public boolean atualizar(double dt) {
         // Processa as colisões e checa se o jogador ainda
         // está vivo.
+        this.transicao = null;
         if (!super.atualizar(dt)) {
             return false;
         }
@@ -224,7 +281,7 @@ public class Jogador extends Ator implements KeyListener {
                                 direcaoY * VELOCIDADE_MAX
                                         + ATAQUE_PESO_VELOCIDADE * velocidade.getY());
                 var projetil = new ProjJogador(getVetorCentro(), orientacao, this);
-                filaDeSpawn.add(projetil);
+                addSpawn(projetil);
             } else {
                 ataqueTimer = 0;
             }
@@ -247,10 +304,21 @@ public class Jogador extends Ator implements KeyListener {
                 this.velocidade.setLocation(this.velocidade.getX(), 0);
             }
         }
-        // Se o jogador se chocar com um projétil, leva dano.
-        else if (colisor instanceof Projetil) {
+        // Se o jogador se chocar com um projétil, ou
+        // inimigo, leva dano.
+        if (colisor instanceof Projetil) {
             Projetil p = (Projetil) colisor;
-            this.vida += p.getDano();
+            this.vida -= p.getDano();
+        }
+        if (colisor instanceof Inimigo) {
+            Inimigo i = (Inimigo) colisor;
+            this.vida -= i.getDano();
+        }
+        // Se o jogador entrar em contato com uma porta, muda
+        // o valor de transição do jogador.
+        if (colisor instanceof Porta) {
+            Porta p = (Porta) colisor;
+            this.transicao = p.getAcesso();
         }
     }
 
@@ -277,92 +345,115 @@ public class Jogador extends Ator implements KeyListener {
             this.animacaoDist -= Jogador.ANIMACAO_DIST_MAX;
         }
 
+        // Calcula a posição do tanque levando a câmera em
+        // consideração.
+        double px = this.getPosicao().getX() - camera.getX();
+        double py = this.getPosicao().getY() - camera.getY();
+        var pos = new Point2D.Double(px, py);
+
         // Desenha a base a o canhão centralizados sobre o tanque.
-        Grafico.BASE.desenhar(this.getPosicao(), g, this.orientacaoTanque);
-
-        double px =
-                this.getPosicao().getX()
-                        + (Jogador.DIMENSOES.getX() - Grafico.CANO.getDimensoes().getX()) / 2;
-        double py =
-                this.getPosicao().getY()
-                        + (Jogador.DIMENSOES.getY() - Grafico.CANO.getDimensoes().getY()) / 2;
-        Grafico.CANO.desenhar(new Point2D.Double(px, py), g, this.orientacaoCanhao);
-    }
-}
-
-/**
- * Mapeia valores de teclas pressionados pelo usuário para ações do jogo.
- */
-enum Tecla {
-    MOVER_N(KeyEvent.VK_W),
-    MOVER_E(KeyEvent.VK_D),
-    MOVER_S(KeyEvent.VK_S),
-    MOVER_W(KeyEvent.VK_A),
-    ATIRAR_N(KeyEvent.VK_UP),
-    ATIRAR_E(KeyEvent.VK_RIGHT),
-    ATIRAR_S(KeyEvent.VK_DOWN),
-    ATIRAR_W(KeyEvent.VK_LEFT);
-
-    // Inicializa o mapa após todas as chaves terem sido inicializadas.
-    // Baseado em <https://stackoverflow.com/a/536461>.
-    private static HashMap<Integer, Tecla> mapa;
-
-    static {
-        Tecla.mapa = new HashMap<Integer, Tecla>();
-        for (var i : EnumSet.allOf(Tecla.class)) {
-            Tecla.mapa.put(i.valor, i);
-        }
+        Grafico.SOMBRA.desenhar(pos, g, this.orientacaoTanque);
+        Grafico.BASE.desenhar(pos, g, this.orientacaoTanque);
+        Grafico.CANO.desenhar(pos, g, this.orientacaoCanhao);
     }
 
-    private int valor;
-
-    Tecla(int valor) {
-        this.valor = valor;
+    public void desenharHUD(Graphics2D g) {
+        this.hud.setVida(this.vida);
+        this.hud.desenhar(new Point2D.Double(), g);
     }
 
-    public static Tecla getTecla(int valor) {
-        return Tecla.mapa.get(valor);
-    }
-}
-
-/**
- * Carrega os arquivos de gráfico do jogador.
- */
-enum Grafico {
-    BASE("base", 4, "png"),
-    CANO("cano", 1, "png");
-
-    private static final String CAMINHO = "tanque";
-
-    private final ArrayList<grafico.Grafico> grafs;
-
-    private int frame;
-
-    Grafico(String pasta, int numFrames, String extensao) {
-        this.grafs = new ArrayList<grafico.Grafico>();
-        for (var i = 1; i <= numFrames; i++) {
-            var caminho = String.format("%s/%s/%d.%s", CAMINHO, pasta, i, extensao);
-            grafs.add(grafico.Grafico.carregar(caminho));
-        }
-        this.frame = 0;
+    // Retorna a direção de transição.
+    public Cardinalidade getTransicao() {
+        return this.transicao;
     }
 
-    public void desenhar(Point2D.Double posicao, Graphics2D g, Point2D.Double orientacao) {
-        double angulo = atan2(orientacao.getY(), orientacao.getX());
-        this.grafs.get(this.frame).desenhar(g, posicao, 1, angulo);
+    // Torna a posição do jogador pública.
+    @Override
+    public Point2D.Double getPosicao() {
+        return super.getPosicao();
     }
 
-    // Avança um frame da animação, recomeçando do início se
-    // necessário.
-    public void avancarAnimacao() {
-        this.frame++;
-        if (this.frame >= this.grafs.size()) {
+    /**
+     * Carrega os arquivos de gráfico do jogador.
+     */
+    enum Grafico {
+        BASE("base", 4),
+        SOMBRA("sombra", 1),
+        CANO("cano", 1);
+
+        private static final String CAMINHO = "tanque";
+        private static final String EXTENSAO = "png";
+
+        private final ArrayList<grafico.Grafico> grafs;
+
+        private int frame;
+
+        Grafico(String pasta, int numFrames) {
+            this.grafs = new ArrayList<grafico.Grafico>();
+            for (var i = 1; i <= numFrames; i++) {
+                var caminho = String.format("%s/%s/%d.%s", CAMINHO, pasta, i, EXTENSAO);
+                grafs.add(grafico.Grafico.carregar(caminho));
+            }
             this.frame = 0;
         }
+
+        public void desenhar(Point2D.Double posicao, Graphics2D g, Point2D.Double orientacao) {
+            double angulo = atan2(orientacao.getY(), orientacao.getX());
+            // Centraliza o elemento sobre a base.
+            double px =
+                    posicao.getX() + (BASE.getDimensoes().getX() - this.getDimensoes().getX()) / 2;
+            double py =
+                    posicao.getY() + (BASE.getDimensoes().getY() - this.getDimensoes().getY()) / 2;
+            this.grafs.get(this.frame).desenhar(g, new Point2D.Double(px, py), 1, angulo);
+        }
+
+        // Avança um frame da animação, recomeçando do início se
+        // necessário.
+        public void avancarAnimacao() {
+            this.frame++;
+            if (this.frame >= this.grafs.size()) {
+                this.frame = 0;
+            }
+        }
+
+        // Retorna as dimensoes do frame atual.
+        public Point2D.Double getDimensoes() {
+            return this.grafs.get(frame).getDimensoes();
+        }
     }
 
-    // Retorna as dimensoes do frame atual.
-    public Point2D.Double getDimensoes() {
-        return this.grafs.get(frame).getDimensoes();
+    /**
+     * Mapeia valores de teclas pressionados pelo usuário para ações do jogo.
+     */
+    enum Tecla {
+        MOVER_N(KeyEvent.VK_W),
+        MOVER_E(KeyEvent.VK_D),
+        MOVER_S(KeyEvent.VK_S),
+        MOVER_W(KeyEvent.VK_A),
+        ATIRAR_N(KeyEvent.VK_UP),
+        ATIRAR_E(KeyEvent.VK_RIGHT),
+        ATIRAR_S(KeyEvent.VK_DOWN),
+        ATIRAR_W(KeyEvent.VK_LEFT);
+
+        // Inicializa o mapa após todas as chaves terem sido inicializadas.
+        // Baseado em <https://stackoverflow.com/a/536461>.
+        private static HashMap<Integer, Tecla> mapa;
+
+        static {
+            Tecla.mapa = new HashMap<Integer, Tecla>();
+            for (var i : EnumSet.allOf(Tecla.class)) {
+                Tecla.mapa.put(i.valor, i);
+            }
+        }
+
+        private int valor;
+
+        Tecla(int valor) {
+            this.valor = valor;
+        }
+
+        public static Tecla getTecla(int valor) {
+            return Tecla.mapa.get(valor);
+        }
     }
 }

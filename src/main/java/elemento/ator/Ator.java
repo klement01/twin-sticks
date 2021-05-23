@@ -12,8 +12,8 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
 public abstract class Ator extends ElemDinamico implements Colisoes {
-    protected ArrayList<Colisao> filaDeColisoes = new ArrayList<Colisao>();
-    protected ArrayList<Ator> filaDeSpawn = new ArrayList<Ator>();
+    private ArrayList<Colisao> filaDeColisoes = new ArrayList<Colisao>();
+    private ArrayList<Ator> filaDeSpawn = new ArrayList<Ator>();
 
     protected Ator(Point2D.Double posicao, Point2D.Double dimensao) {
         super(posicao, dimensao);
@@ -45,6 +45,11 @@ public abstract class Ator extends ElemDinamico implements Colisoes {
         var fila = (ArrayList<Ator>) filaDeSpawn.clone();
         filaDeSpawn.clear();
         return fila;
+    }
+
+    // Adiciona um novo spawn à lista.
+    protected final void addSpawn(Ator spawn) {
+        this.filaDeSpawn.add(spawn);
     }
 
     // Obtem o retângulo que representa a colisão do objeto.

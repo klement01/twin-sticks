@@ -30,7 +30,7 @@ public class Grafico {
     private static final AffineTransformOp TRANFORMACAO_IDENTIDADE =
             new AffineTransformOp(new AffineTransform(), AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
 
-    private final BufferedImage imagem;
+    private BufferedImage imagem;
 
     // Cria um gráfico baseado em um arquivo.
     public Grafico(String arquivo) throws IOException, IllegalArgumentException {
@@ -40,14 +40,19 @@ public class Grafico {
 
     // Retorna um gráfico padrão.
     private Grafico() {
-        imagem =
+        this.imagem =
                 new BufferedImage(
                         (int) DIMENSOES_QUADRADOS.getX(),
                         (int) DIMENSOES_QUADRADOS.getY(),
                         BufferedImage.TYPE_INT_RGB);
-        var g = imagem.getGraphics();
+        var g = this.imagem.getGraphics();
         g.setColor(Color.MAGENTA);
         g.fillRect(0, 0, (int) DIMENSOES_QUADRADOS.getX(), (int) DIMENSOES_QUADRADOS.getY());
+    }
+
+    // Retorna um gráfico contendo uma imagem arbitrária.
+    private Grafico(BufferedImage img) {
+        this.imagem = img;
     }
 
     // Tenta ler um gráfico. Se houver problemas na leitura, usa um gráfico
@@ -93,5 +98,10 @@ public class Grafico {
     // arbitrária.
     public void desenhar(Graphics2D g, Point2D.Double posicao, AffineTransformOp transformacao) {
         g.drawImage(this.imagem, transformacao, (int) posicao.getX(), (int) posicao.getY());
+    }
+
+    // Seleciona uma região da imagem.
+    public void cortarRegiao(int x, int y, int w, int h) {
+        this.imagem = this.imagem.getSubimage(x, y, w, h);
     }
 }

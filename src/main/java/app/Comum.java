@@ -5,8 +5,10 @@ package app;
 
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.util.EnumMap;
+import java.util.Random;
 
-public class Comum {
+public final class Comum {
     // Título do jogo na janela.
     public static final String TITULO = "TwinSticks";
 
@@ -19,6 +21,9 @@ public class Comum {
     // Quadros por segundo a serem renderizados.
     public static final int FPS_ALVO = 60;
 
+    // Gerador de números aleatórios.
+    public static final Random rand = new Random();
+
     // Direções.
     public enum Cardinalidade {
         NORTE,
@@ -28,6 +33,27 @@ public class Comum {
         NORDESTE,
         SUDESTE,
         SUDOESTE,
-        NOROESTE
+        NOROESTE,
+        CENTRO;
+
+        private static EnumMap<Cardinalidade, Cardinalidade> mapaOpostos;
+
+        static {
+            Cardinalidade.mapaOpostos =
+                    new EnumMap<Cardinalidade, Cardinalidade>(Cardinalidade.class);
+            Cardinalidade.mapaOpostos.put(NORTE, SUL);
+            Cardinalidade.mapaOpostos.put(SUL, NORTE);
+            Cardinalidade.mapaOpostos.put(LESTE, OESTE);
+            Cardinalidade.mapaOpostos.put(OESTE, LESTE);
+            Cardinalidade.mapaOpostos.put(NORDESTE, SUDOESTE);
+            Cardinalidade.mapaOpostos.put(SUDOESTE, NORDESTE);
+            Cardinalidade.mapaOpostos.put(NOROESTE, SUDESTE);
+            Cardinalidade.mapaOpostos.put(SUDESTE, NOROESTE);
+            Cardinalidade.mapaOpostos.put(CENTRO, CENTRO);
+        }
+
+        public Cardinalidade oposto() {
+            return Cardinalidade.mapaOpostos.get(this);
+        }
     };
 }

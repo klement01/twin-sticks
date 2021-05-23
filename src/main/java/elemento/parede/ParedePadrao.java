@@ -1,5 +1,5 @@
 /**
- * Parede que pode ser instanciada, usada para testes.
+ * Parede treliçada.
  */
 package elemento.parede;
 
@@ -7,7 +7,6 @@ import static java.lang.Math.PI;
 
 import app.Comum.Cardinalidade;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.EnumSet;
@@ -17,7 +16,6 @@ public class ParedePadrao extends Parede {
 
     public ParedePadrao(Point2D.Double posicao, EnumSet<Cardinalidade> cardinalidades) {
         super(posicao, DIMENSOES, cardinalidades);
-        this.cor = Color.blue;
     }
 
     @Override
@@ -35,76 +33,76 @@ public class ParedePadrao extends Parede {
         // cardinalidades de colisão da parede.
         for (var i : this.getCardinalidades()) {
             Grafico.ENFEITE.desenharNosEixos(posicao, g, i);
-            // Grafico.ENFEITE_BORDA.desenharNasDiagonais(posicao, g, i);
+            Grafico.ENFEITE_CANTO.desenharNasDiagonais(posicao, g, i);
         }
         for (var i : this.getCardinalidades()) {
             Grafico.BORDA.desenharNosEixos(posicao, g, i);
         }
     }
-}
 
-enum Grafico {
-    BASE("base.png"),
-    BORDA("borda.png"),
-    // ENFEITE_BORDA("enfeite_borda.png"),
-    ENFEITE("enfeite.png");
+    private enum Grafico {
+        BASE("base.png"),
+        BORDA("borda.png"),
+        ENFEITE_CANTO("enfeite_canto.png"),
+        ENFEITE("enfeite.png");
 
-    private static final String CAMINHO = "parede_padrao/";
+        private static final String CAMINHO = "parede_padrao/";
 
-    private final grafico.Grafico graf;
+        private final grafico.Grafico graf;
 
-    Grafico(String arquivo) {
-        this.graf = grafico.Grafico.carregar(Grafico.CAMINHO + arquivo);
-    }
-
-    public void desenhar(Point2D.Double posicao, Graphics2D g) {
-        this.graf.desenhar(g, posicao);
-    }
-
-    // Desenha um gráfico alinhado com os eixos x e y.
-    public void desenharNosEixos(
-            Point2D.Double posicao, Graphics2D g, Cardinalidade cardinalidade) {
-        double angulo = 0;
-        switch (cardinalidade) {
-            case LESTE:
-                angulo = 0;
-                break;
-            case NORTE:
-                angulo = 3 * PI / 2;
-                break;
-            case OESTE:
-                angulo = PI;
-                break;
-            case SUL:
-                angulo = PI / 2;
-                break;
-            default:
-                return;
+        Grafico(String arquivo) {
+            this.graf = grafico.Grafico.carregar(Grafico.CAMINHO + arquivo);
         }
-        this.graf.desenhar(g, posicao, 1, angulo);
-    }
 
-    // Desenha um gráfico alinhado com as diagonais x = y
-    // e x = -y (na prática, as bordas da imagem.)
-    public void desenharNasDiagonais(
-            Point2D.Double posicao, Graphics2D g, Cardinalidade cardinalidade) {
-        double angulo = 0;
-        switch (cardinalidade) {
-            case NORDESTE:
-                angulo = 0;
-                break;
-            case NOROESTE:
-                angulo = PI / 2;
-                break;
-            case SUDOESTE:
-                angulo = PI;
-                break;
-            case SUDESTE:
-                angulo = 3 * PI / 2;
-                break;
-            default:
-                return;
+        public void desenhar(Point2D.Double posicao, Graphics2D g) {
+            this.graf.desenhar(g, posicao);
         }
-        this.graf.desenhar(g, posicao, 1, angulo);
+
+        // Desenha um gráfico alinhado com os eixos x e y.
+        public void desenharNosEixos(
+                Point2D.Double posicao, Graphics2D g, Cardinalidade cardinalidade) {
+            double angulo = 0;
+            switch (cardinalidade) {
+                case LESTE:
+                    angulo = 0;
+                    break;
+                case NORTE:
+                    angulo = 3 * PI / 2;
+                    break;
+                case OESTE:
+                    angulo = PI;
+                    break;
+                case SUL:
+                    angulo = PI / 2;
+                    break;
+                default:
+                    return;
+            }
+            this.graf.desenhar(g, posicao, 1, angulo);
+        }
+
+        // Desenha um gráfico alinhado com as diagonais x = y
+        // e x = -y (na prática, as bordas da imagem.)
+        public void desenharNasDiagonais(
+                Point2D.Double posicao, Graphics2D g, Cardinalidade cardinalidade) {
+            double angulo = 0;
+            switch (cardinalidade) {
+                case NORDESTE:
+                    angulo = 0;
+                    break;
+                case NOROESTE:
+                    angulo = 3 * PI / 2;
+                    break;
+                case SUDOESTE:
+                    angulo = PI;
+                    break;
+                case SUDESTE:
+                    angulo = PI / 2;
+                    break;
+                default:
+                    return;
+            }
+            this.graf.desenhar(g, posicao, 1, angulo);
+        }
     }
 }

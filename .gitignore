@@ -4,7 +4,7 @@ twinsticks.code-workspace
 /etc
 /scripts
 
-/maven/target
+twin-sticks/target
 
 *.class
 *.jar

@@ -92,7 +92,7 @@ public class Planta {
     }
 
     public static Sala criarSalaBasicaComAcessos(EnumSet<Cardinalidade> acessos) {
-        return new Sala(Planta.plantaBasica, acessos);
+        return new Sala(Planta.plantaBasica, acessos, true);
     }
 
     /*

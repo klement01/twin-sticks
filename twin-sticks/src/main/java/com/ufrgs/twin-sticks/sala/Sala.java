@@ -47,10 +47,16 @@ public class Sala {
      * Inicializa a sala da pasta de salas com o nome especificado.
      */
     public Sala(Planta planta, EnumSet<Cardinalidade> acessos) throws IllegalArgumentException {
+        this(planta, acessos, false);
+    }
+
+    public Sala(Planta planta, EnumSet<Cardinalidade> acessos, boolean tutorial)
+            throws IllegalArgumentException {
         if (!planta.getAcessosPossiveis().containsAll(acessos)) {
             throw new IllegalArgumentException("Planta não contém os acessos necessário.");
         }
         this.acessos = acessos;
+        this.chao = new Chao(tutorial);
         processarMatrizDeSala(planta.getMatrizSala());
     }
 
@@ -60,8 +66,6 @@ public class Sala {
      */
     private void processarMatrizDeSala(ArrayList<ArrayList<TipoElemento>> matriz)
             throws IllegalArgumentException {
-        this.chao = new Chao();
-
         // Substitui as portas genéricas por portas adequadas
         // ou por paredes.
         preprocessarPortas(matriz);

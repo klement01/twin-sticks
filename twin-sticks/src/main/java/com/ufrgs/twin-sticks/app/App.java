@@ -29,10 +29,11 @@ public class App extends JFrame {
         System.setProperty("sun.java2d.opengl", "true");
 
         // Cria uma janela e a torna visível.
-        EventQueue.invokeLater(() -> {
-            var jogo = new App();
-            jogo.setVisible(true);
-        });
+        EventQueue.invokeLater(
+                () -> {
+                    var jogo = new App();
+                    jogo.setVisible(true);
+                });
     }
 
     private App() {

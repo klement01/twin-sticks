@@ -4,6 +4,8 @@ twinsticks.code-workspace
 /etc
 /scripts
 
+/*.zip
+
 twin-sticks/target
 
 *.class

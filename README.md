@@ -7,7 +7,7 @@ Jogo do gênero "twin stick shooter", à la Smash TV. Trabalho final da discipli
 * Yasmin Rodrigues Koppenhagen
 
 # Instruções de compilação
-Este repositório usa o [Maven](https://maven.apache.org/). É necessária a versão 11 ou superior do [Java SE](https://www.oracle.com/java/technologies/javase-downloads.html) ou [OpenJDK](https://www.oracle.com/java/technologies/javase-downloads.html).
+Este repositório usa o [Maven](https://maven.apache.org/). É necessária a versão 11 ou superior do [Java SE](https://www.oracle.com/java/technologies/java-se-glance.html) ou [OpenJDK](https://openjdk.java.net/).
 
 Use o script `compile` ou `compile.ps1` para criar um arquivo jar incluindo todas as classes e recursos usando o Maven. O jar será copiado para a raiz do repositório.
 
